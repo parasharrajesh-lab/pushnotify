@@ -21,9 +21,9 @@
       "status": 200,
       "title": "Nock",
       "hasCanvas": false,
-      "bodyTextLen": 742,
-      "bodyTextHash": "b6dca1a605251bbb4a6c0a3291f20c14b5dce4ba1527f3365cd5e4e4891cf72d",
-      "bodyTextPrefix": "Nock Register a workspace Mobile push for a business and its tea",
+      "bodyTextLen": 0,
+      "bodyTextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bodyTextPrefix": "",
       "horizontalOverflow": false,
       "consoleErrors": [],
       "pageErrors": [],
@@ -37,6 +37,7 @@
   "verdictFile": "/workspace/screenshots/app-builder-built.json",
   "divergesFromBaseline": true,
   "baselineReasons": [
-    "desktop: body text collapsed (742 -> 4 chars)"
+    "desktop: body text collapsed (742 -> 4 chars)",
+    "mobile: body text collapsed (742 -> 0 chars)"
   ]
 }

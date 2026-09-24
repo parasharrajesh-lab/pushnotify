@@ -4,8 +4,9 @@ import { Phone } from "@/components/phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { reviewCampaign, stateLabel, STEPS, tokenCounts, type CampaignDraft, type StepName } from "@/lib/notify";
-import { audienceLabel, audienceSize, TAGS, tagLabel, type Audience, type Platform } from "@/lib/push";
+import { APP_EVENTS, attributeLabel, GOAL_METRICS, goalLabel, IOS_EVENTS, type BehaviorAttribute, type GoalMetric } from "@/lib/behavior";
+import { ctaHref, destinationPath, formatSchedule, frequencyLabel, imageError, isoToIstInput, istInputToIso, reviewCampaign, stateLabel, STEPS, suggestEnd, suggestStart, tokenCounts, type CampaignDraft, type Frequency, type StepName } from "@/lib/notify";
+import { audienceLabel, SAMPLE_DISH, TAGS, tagLabel, type Audience, type Platform } from "@/lib/push";
 import { usePush } from "@/lib/push-store";
 import { cn, formatCount } from "@/lib/utils";
 
@@ -26,17 +27,25 @@ const EMPTY: CampaignDraft = {
   link: "metrobites://order/4821",
   image: "",
   video: "",
-  button: "Allow",
+  button: "Track order",
+  ctaLink: "",
   delivery: "now",
+  scheduleAt: "",
+  endsAt: "",
   ttlHours: 24,
   delaySeconds: 0,
   quietHours: true,
-  goal: "Order opened",
+  frequency: "once",
+  frequencyCap: 1,
+  goal: "Opened the notification",
+  goalMetric: "opened",
+  attributes: [],
 };
 
 export function SendView() {
   const reach = usePush((s) => s.reach);
   const subscribers = usePush((s) => s.subscribers);
+  const segments = usePush((s) => s.segments);
   const plan = usePush((s) => s.plan);
   const logo = usePush((s) => s.logo);
   const appName = usePush((s) => s.businessName);
@@ -53,8 +62,9 @@ export function SendView() {
     tag: device.tag,
     status: device.status,
     pushToken: device.pushToken,
+    behavior: device.behavior,
   }));
-  const reviewed = reviewCampaign({ draft, reach, devices, plan });
+  const reviewed = reviewCampaign({ draft, reach, devices, segments, plan });
   const tokens = tokenCounts(devices, draft.audience);
   const index = STEPS.indexOf(step);
 
@@ -62,8 +72,18 @@ export function SendView() {
     setDraft((current) => ({ ...current, ...next }));
   }
 
+  function toggleAttribute(item: BehaviorAttribute) {
+    const has = draft.attributes.includes(item);
+    const next = has ? draft.attributes.filter((current) => current !== item) : [...draft.attributes, item];
+    if (!has && next.length > 4) {
+      toast.error("Use up to 4 behavior attributes.");
+      return;
+    }
+    patch({ attributes: next });
+  }
+
   function go(next: StepName) {
-    const problem = reviewCampaign({ draft, reach, devices, plan }).error;
+    const problem = reviewCampaign({ draft, reach, devices, segments, plan }).error;
     const early = step === "What" || step === "When" || next === "Publish" || next === "When";
     if (early && problem && STEPS.indexOf(next) > index) {
       toast.error(problem);
@@ -91,7 +111,17 @@ export function SendView() {
       return;
     }
     setPulse((n) => n + 1);
-    toast.success(stateLabel(reviewed.state));
+    toast.success(stateLabel(reviewed.state, draft.qualification));
+  }
+
+  function setFrequency(frequency: Frequency) {
+    const cap = frequency === "daily" ? Math.min(draft.frequencyCap || 1, 5) : Math.min(draft.frequencyCap || 1, 10);
+    const start = draft.delivery === "later" && draft.scheduleAt ? draft.scheduleAt : new Date().toISOString();
+    patch({
+      frequency,
+      frequencyCap: frequency === "once" ? 1 : Math.max(1, cap),
+      endsAt: frequency === "daily" || frequency === "weekly" ? draft.endsAt || suggestEnd(start) : draft.endsAt,
+    });
   }
 
   const surface = draft.channel === "push" ? "lock" : draft.layout;
@@ -129,7 +159,7 @@ export function SendView() {
             <fieldset>
               <legend className="pb-2 text-sm font-medium">Channel</legend>
               <div className="grid gap-2 sm:grid-cols-2">
-                <Choice on={draft.channel === "push"} label="Push" detail="Lock screen · FCM and APNs" onClick={() => patch({ channel: "push", layout: "lock" })} />
+                <Choice on={draft.channel === "push"} label="Push" detail="Lock screen · FCM and APNs" onClick={() => patch({ channel: "push", layout: "lock", frequency: draft.frequency === "session" ? "once" : draft.frequency, frequencyCap: draft.frequency === "session" ? 1 : draft.frequencyCap })} />
                 <Choice on={draft.channel === "inapp"} label="In-app" detail="Shown while the app is open" onClick={() => patch({ channel: "inapp", layout: draft.layout === "lock" ? "banner" : draft.layout })} />
               </div>
             </fieldset>
@@ -154,8 +184,13 @@ export function SendView() {
             </div>
             <label className="flex flex-col gap-1 text-sm font-medium">
               Goal
-              <Input value={draft.goal} maxLength={80} onChange={(e) => patch({ goal: e.target.value })} placeholder="Optional conversion, such as Order opened" />
             </label>
+            <div className="flex flex-wrap gap-2">
+              {GOAL_METRICS.map((metric) => (
+                <Choice key={metric} on={draft.goalMetric === metric} label={goalLabel(metric)} detail="" onClick={() => patch({ goalMetric: metric as GoalMetric, goal: goalLabel(metric) })} />
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">Counted after delivery. A denied or not-asked device cannot count as an open.</p>
           </section>
         ) : null}
 
@@ -180,13 +215,47 @@ export function SendView() {
                   </button>
                 ))}
               </div>
+              {segments.length > 0 ? (
+                <div className="flex flex-wrap gap-2 pt-3">
+                  {segments.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={choice === item.id}
+                      onClick={() => {
+                        setChoice(item.id);
+                        patch({ audience: { kind: "segment", segmentId: item.id } });
+                      }}
+                      className={cn("h-10 rounded-sm px-3 text-sm font-medium", choice === item.id ? "bg-primary text-primary-foreground" : "bg-muted")}
+                    >
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="pt-3 text-sm text-muted-foreground">Create a segment to target behavior.</p>
+              )}
+            </fieldset>
+            <fieldset>
+              <legend className="pb-2 text-sm font-medium">Behavior attributes</legend>
+              <p className="pb-2 text-sm text-muted-foreground">Every selected event must be true. App events follow the analytics names. iOS events are the notification permission.</p>
+              <p className="pb-1 text-xs font-medium text-muted-foreground">App events</p>
+              <div className="flex flex-wrap gap-2">
+                {APP_EVENTS.map((item) => (
+                  <Attr key={item} on={draft.attributes.includes(item)} label={attributeLabel(item)} onClick={() => toggleAttribute(item)} />
+                ))}
+              </div>
+              <p className="pb-1 pt-3 text-xs font-medium text-muted-foreground">iOS permission</p>
+              <div className="flex flex-wrap gap-2">
+                {IOS_EVENTS.map((item) => (
+                  <Attr key={item} on={draft.attributes.includes(item)} label={attributeLabel(item)} onClick={() => toggleAttribute(item)} />
+                ))}
+              </div>
             </fieldset>
             <p className="pt-3 text-sm tabular-nums text-muted-foreground">
-              Estimated reach {formatCount(draft.layout === "primer" ? tokens.waiting : audienceSize(reach, draft.audience))} · {audienceLabel(draft.audience)}
+              Estimated reach {formatCount(reviewed.targeted)} · {audienceName(draft.audience, segments)}
             </p>
-            {reviewed.error && (draft.layout === "primer" || audienceSize(reach, draft.audience) === 0) ? (
-              <p className="pt-2 text-sm text-danger">{reviewed.error}</p>
-            ) : null}
+            {reviewed.error && reviewed.targeted === 0 ? <p className="pt-2 text-sm text-danger">{reviewed.error}</p> : null}
           </section>
         ) : null}
 
@@ -214,35 +283,50 @@ export function SendView() {
               <Textarea value={draft.body} maxLength={180} onChange={(e) => patch({ body: e.target.value })} />
               <span className="text-xs font-normal tabular-nums text-muted-foreground">{draft.body.length}/180</span>
             </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Deep link
-              <Input value={draft.link} onChange={(e) => patch({ link: e.target.value })} placeholder="app://order/4821" />
-            </label>
-            {draft.layout === "primer" ? (
+            <fieldset className="rounded-xl border border-border p-3">
+              <legend className="px-1 text-sm font-medium">Deep link</legend>
               <label className="flex flex-col gap-1 text-sm font-medium">
-                Button
-                <Input value={draft.button} maxLength={24} onChange={(e) => patch({ button: e.target.value })} />
+                URL
+                <Input value={draft.link} onChange={(e) => patch({ link: e.target.value })} placeholder="metrobites://order/4821" />
               </label>
-            ) : null}
+              <p className="pt-2 text-sm text-muted-foreground">
+                The image opens on this screen when the person taps the message{draft.link.trim() ? `: ${destinationPath(draft.link)}` : ""}.
+              </p>
+              <label className="flex flex-col gap-1 pt-3 text-sm font-medium">
+                Image for this screen
+                <Input value={draft.image.startsWith("data:") ? "" : draft.image} onChange={(e) => patch({ image: e.target.value })} placeholder="https:// image" />
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="text-sm text-muted-foreground"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 120_000) {
+                      toast.error("Image must be under 120 KB.");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => patch({ image: typeof reader.result === "string" ? reader.result : "" });
+                    reader.readAsDataURL(file);
+                  }}
+                />
+              </label>
+              <button type="button" className="mt-2 text-sm font-medium underline" onClick={() => patch({ image: SAMPLE_DISH })}>
+                Use sample image
+              </button>
+              {draft.image && draft.link.trim() ? (
+                <img src={draft.image} alt="" className="mt-3 h-24 w-full rounded-sm bg-foreground object-contain" />
+              ) : null}
+              {imageError(draft.image, draft.link) ? <p className="pt-2 text-sm text-danger">{imageError(draft.image, draft.link)}</p> : null}
+            </fieldset>
             <label className="flex flex-col gap-1 text-sm font-medium">
-              Image
-              <Input value={draft.image.startsWith("data:") ? "" : draft.image} onChange={(e) => patch({ image: e.target.value })} placeholder="https:// image" />
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                className="text-sm text-muted-foreground"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  if (file.size > 120_000) {
-                    toast.error("Image must be under 120 KB.");
-                    return;
-                  }
-                  const reader = new FileReader();
-                  reader.onload = () => patch({ image: typeof reader.result === "string" ? reader.result : "" });
-                  reader.readAsDataURL(file);
-                }}
-              />
+              Button
+              <Input value={draft.button} maxLength={24} onChange={(e) => patch({ button: e.target.value })} placeholder="Track order" />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Button deep link
+              <Input value={draft.ctaLink} onChange={(e) => patch({ ctaLink: e.target.value })} placeholder="Leave empty to use the message deep link" />
             </label>
             <label className="flex flex-col gap-1 text-sm font-medium">
               Video
@@ -264,12 +348,60 @@ export function SendView() {
                 <Choice on={draft.delivery === "now"} label="Now" detail="" onClick={() => patch({ delivery: "now" })} />
                 <Choice
                   on={draft.delivery === "later"}
-                  label="Later"
+                  label="Custom time"
                   detail=""
-                  onClick={() => patch({ delivery: "later", qualification: draft.qualification === "past" ? "past" : "past" })}
+                  onClick={() => patch({ delivery: "later", scheduleAt: draft.scheduleAt || suggestStart() })}
                 />
               </div>
+              <p className="pt-2 text-sm text-muted-foreground">
+                {draft.qualification === "past"
+                  ? "Past behavior sends at this time."
+                  : "Live and external triggers start accepting the action at this time. They do not send on the clock."}
+              </p>
             </fieldset>
+            {draft.delivery === "later" ? (
+              <label className="flex flex-col gap-1 text-sm font-medium">
+                Date and time (IST)
+                <Input
+                  type="datetime-local"
+                  value={isoToIstInput(draft.scheduleAt)}
+                  onChange={(e) => patch({ scheduleAt: istInputToIso(e.target.value) })}
+                />
+              </label>
+            ) : null}
+            <fieldset>
+              <legend className="pb-2 text-sm font-medium">Frequency</legend>
+              <div className="flex flex-wrap gap-2">
+                <Choice on={draft.frequency === "once"} label="Once" detail="" onClick={() => patch({ frequency: "once", frequencyCap: 1 })} />
+                {draft.channel === "inapp" ? (
+                  <Choice on={draft.frequency === "session"} label="Per session" detail="" onClick={() => setFrequency("session")} />
+                ) : null}
+                <Choice on={draft.frequency === "daily"} label="Daily" detail="" onClick={() => setFrequency("daily")} />
+                <Choice on={draft.frequency === "weekly"} label="Weekly" detail="" onClick={() => setFrequency("weekly")} />
+              </div>
+            </fieldset>
+            {draft.frequency !== "once" ? (
+              <label className="flex flex-col gap-1 text-sm font-medium">
+                Cap per device
+                <Input
+                  type="number"
+                  min={1}
+                  max={draft.frequency === "daily" ? 5 : 10}
+                  value={draft.frequencyCap}
+                  onChange={(e) => patch({ frequencyCap: Math.round(Number(e.target.value)) })}
+                />
+              </label>
+            ) : null}
+            {draft.frequency === "daily" || draft.frequency === "weekly" || draft.channel === "inapp" ? (
+              <label className="flex flex-col gap-1 text-sm font-medium">
+                {draft.frequency === "daily" || draft.frequency === "weekly" ? "End (IST)" : "Stop showing after (IST, optional)"}
+                <Input
+                  type="datetime-local"
+                  value={isoToIstInput(draft.endsAt)}
+                  onChange={(e) => patch({ endsAt: istInputToIso(e.target.value) })}
+                />
+              </label>
+            ) : null}
             {draft.channel === "push" ? (
               <label className="flex flex-col gap-1 text-sm font-medium">
                 Time to live, hours
@@ -295,7 +427,7 @@ export function SendView() {
             )}
             <label className="flex items-center gap-2 text-sm font-medium">
               <input type="checkbox" checked={draft.quietHours} onChange={(e) => patch({ quietHours: e.target.checked })} />
-              Quiet hours, 9pm to 9am
+              Quiet hours, 9pm to 9am IST
             </label>
             {reviewed.error ? <p className="text-sm text-danger">{reviewed.error}</p> : null}
           </section>
@@ -306,10 +438,16 @@ export function SendView() {
             <p className="font-medium">Summary</p>
             <ul className="pt-2 text-muted-foreground">
               <li>{draft.channel === "push" ? "Push" : "In-app"} · {draft.qualification === "past" ? "Past behavior" : draft.qualification === "live" ? "Live behavior" : "External trigger"}</li>
-              <li>{audienceLabel(draft.audience)} · {formatCount(reviewed.targeted)} reachable</li>
-              <li>{draft.delivery === "now" ? "Send now" : "Schedule"} · {stateLabel(reviewed.state)}</li>
+              <li>{audienceName(draft.audience, segments)}{draft.attributes.length ? ` · ${draft.attributes.map(attributeLabel).join(", ")}` : ""} · {formatCount(reviewed.targeted)} reachable</li>
+              <li>{draft.button.trim() ? `${draft.button.trim()} → ${ctaHref(draft)}` : "No button. A tap uses the deep link."}</li>
+              {draft.image ? <li>Image opens on {destinationPath(draft.link) || "the deep link"}</li> : null}
+              <li>{draft.delivery === "now" ? "Send now" : formatSchedule(draft.scheduleAt) || "Custom time"} · {stateLabel(reviewed.state, draft.qualification)}</li>
+              <li>
+                {frequencyLabel(draft.frequency, draft.frequencyCap)}
+                {draft.endsAt ? ` · until ${formatSchedule(draft.endsAt)}` : ""}
+              </li>
               {draft.channel === "push" ? <li>TTL {draft.ttlHours} hours · APNs {formatCount(tokens.ios)} · FCM {formatCount(tokens.android)}</li> : <li>Delay {draft.delaySeconds}s · {draft.layout}</li>}
-              {draft.goal ? <li>Goal · {draft.goal}</li> : null}
+              {draft.goalMetric ? <li>Goal · {goalLabel(draft.goalMetric)}{reviewed.state === "sent" ? ` · ${formatCount(reviewed.goalHits)}` : " · counted after it sends"}</li> : null}
             </ul>
             {reviewed.error ? <p className="pt-3 text-danger">{reviewed.error}</p> : null}
           </section>
@@ -340,11 +478,30 @@ export function SendView() {
           pulse={pulse}
           surface={surface === "lock" ? "lock" : surface}
           button={draft.button}
+          ctaLink={draft.ctaLink}
           onPlatform={setPreview}
         />
       </div>
     </div>
   );
+}
+
+function Attr({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={cn("h-10 rounded-sm px-3 font-mono text-xs font-medium", on ? "bg-primary text-primary-foreground" : "bg-muted")}
+    >
+      {label}
+    </button>
+  );
+}
+
+function audienceName(audience: Audience, segments: { id: string; name: string }[]) {
+  if (audience.kind === "segment") return segments.find((item) => item.id === audience.segmentId)?.name ?? "Segment";
+  return audienceLabel(audience);
 }
 
 function Choice({ on, label, detail, onClick }: { on: boolean; label: string; detail: string; onClick: () => void }) {

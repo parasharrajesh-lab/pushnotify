@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Phone } from "@/components/phone";
 import { audienceLabel, type Campaign, type Platform } from "@/lib/push";
-import { stateLabel } from "@/lib/notify";
+import { attributeLabel, goalLabel, isBehaviorAttribute } from "@/lib/behavior";
+import { frequencyLabel, formatSchedule, stateLabel } from "@/lib/notify";
 import { usePush } from "@/lib/push-store";
 import { cn, formatCount, formatWhen } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ export function ActivityView() {
   const campaigns = usePush((s) => s.campaigns);
   const appName = usePush((s) => s.businessName);
   const logo = usePush((s) => s.logo);
+  const segments = usePush((s) => s.segments);
   const [selected, setSelected] = useState<string | null>(campaigns[0]?.id ?? null);
   const [preview, setPreview] = useState<Platform>("ios");
   const current = campaigns.find((item) => item.id === selected) ?? null;
@@ -23,7 +25,7 @@ export function ActivityView() {
         <ul className="flex flex-col gap-2">
           {campaigns.map((campaign) => (
             <li key={campaign.id}>
-              <CampaignRow campaign={campaign} on={campaign.id === selected} onSelect={() => setSelected(campaign.id)} />
+              <CampaignRow campaign={campaign} segments={segments} on={campaign.id === selected} onSelect={() => setSelected(campaign.id)} />
             </li>
           ))}
         </ul>
@@ -42,6 +44,7 @@ export function ActivityView() {
             pulse={0}
             surface={current.channel === "inapp" ? (current.layout ?? "banner") : "lock"}
             button={current.button}
+            ctaLink={current.ctaLink}
             onPlatform={setPreview}
           />
         ) : (
@@ -52,8 +55,25 @@ export function ActivityView() {
   );
 }
 
-function CampaignRow({ campaign, on, onSelect }: { campaign: Campaign; on: boolean; onSelect: () => void }) {
+function segmentName(audience: Campaign["audience"], segments: { id: string; name: string }[]) {
+  if (audience.kind !== "segment") return audienceLabel(audience);
+  const id = audience.segmentId;
+  return segments.find((item) => item.id === id)?.name ?? "Segment";
+}
+
+function CampaignRow({
+  campaign,
+  segments,
+  on,
+  onSelect,
+}: {
+  campaign: Campaign;
+  segments: { id: string; name: string }[];
+  on: boolean;
+  onSelect: () => void;
+}) {
   const rate = campaign.targeted === 0 ? 0 : Math.round((campaign.delivered / campaign.targeted) * 100);
+  const audience = segmentName(campaign.audience, segments);
   return (
     <button
       type="button"
@@ -71,8 +91,15 @@ function CampaignRow({ campaign, on, onSelect }: { campaign: Campaign; on: boole
       <p className="pt-1 text-sm text-muted-foreground">
         {campaign.channel === "inapp" ? "In-app" : "Push"}
         {" · "}
-        {campaign.isTest ? `Test run · ${campaign.testLabel || "Connection"}` : audienceLabel(campaign.audience)}
-        {campaign.deliveryState && campaign.deliveryState !== "sent" ? ` · ${stateLabel(campaign.deliveryState)}` : ""}
+        {campaign.isTest ? `Test run · ${campaign.testLabel || "Connection"}` : audience}
+        {campaign.deliveryState && campaign.deliveryState !== "sent"
+          ? ` · ${stateLabel(campaign.deliveryState, campaign.qualification)}`
+          : ""}
+        {campaign.frequency && campaign.frequency !== "once" ? ` · ${frequencyLabel(campaign.frequency, campaign.frequencyCap ?? 1)}` : ""}
+        {campaign.scheduleAt ? ` · ${formatSchedule(campaign.scheduleAt)}` : ""}
+        {campaign.button ? ` · ${campaign.button}` : ""}
+        {campaign.goalMetric ? ` · ${goalLabel(campaign.goalMetric)} · ${formatCount(campaign.goalHits ?? 0)} hit the goal` : ""}
+        {campaign.attributes?.length ? ` · ${campaign.attributes.filter(isBehaviorAttribute).map(attributeLabel).join(", ")}` : ""}
       </p>
       <p className="pt-2 text-xs tabular-nums text-muted-foreground">
         {formatCount(campaign.delivered)} delivered · {formatCount(campaign.failed)} failed · {formatCount(campaign.clicked)} clicked · {rate}%

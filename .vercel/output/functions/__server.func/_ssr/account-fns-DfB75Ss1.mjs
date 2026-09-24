@@ -1,10 +1,10 @@
 import { b as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { a as getServerFnById, i as TSS_SERVER_FUNCTION, r as createServerFn } from "./ssr.mjs";
-import { g as isRole, h as isPlan, l as checkPushToken } from "./owner-access-gxEwVfLU.mjs";
-import { d as isLayout, f as isQualification, i as TAGS, l as isAudience, s as authMiddleware, u as isChannel } from "./middleware-fDVXmQad.mjs";
+import { g as isRole, h as isPlan, l as checkPushToken } from "./owner-access-D4e8lj_h.mjs";
+import { A as isFrequency, B as parseInstant, D as isAudience, E as imageFileError, K as segmentError, M as isLayout, N as isQualification, O as isBehaviorAttribute, j as isGoalMetric, k as isChannel, l as TAGS, p as authMiddleware, u as attributeError, w as goalLabel } from "./middleware-qnVsyvPC.mjs";
 import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-7GP3bSk7.js
+//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-DfB75Ss1.js
 var import_jsx_runtime = require_jsx_runtime();
 function cn(...inputs) {
 	return twMerge(clsx(inputs));
@@ -93,19 +93,9 @@ function cleanLink(value) {
 }
 function cleanImage(value) {
 	const image = value.trim();
-	if (!image) return "";
-	if (image.startsWith("data:image/")) {
-		if (!/^data:image\/(png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(image) || image.length > 18e4) throw new Error("Use a PNG, JPEG, WEBP, or GIF under 120 KB.");
-		return image;
-	}
-	let url;
-	try {
-		url = new URL(image);
-	} catch {
-		throw new Error("Image must be an https link or a small upload.");
-	}
-	if (url.protocol !== "https:") throw new Error("Image links must use https.");
-	return url.toString();
+	const problem = imageFileError(image);
+	if (problem) throw new Error(problem);
+	return image;
 }
 function cleanVideo(value) {
 	const video = value.trim();
@@ -124,9 +114,14 @@ function cleanDraft(input) {
 	if (!input || !isChannel(input.channel) || !isQualification(input.qualification) || !isLayout(input.layout)) throw new Error("Choose a push or an in-app campaign.");
 	if (!isAudience(input.audience)) throw new Error("Choose an audience.");
 	if (input.delivery !== "now" && input.delivery !== "later") throw new Error("Choose when to send.");
+	if (!isFrequency(input.frequency)) throw new Error("Choose a frequency.");
+	if (!isGoalMetric(input.goalMetric)) throw new Error("Choose a goal.");
 	const ttlHours = Math.round(Number(input.ttlHours));
 	const delaySeconds = Math.round(Number(input.delaySeconds));
-	if (!Number.isFinite(ttlHours) || !Number.isFinite(delaySeconds)) throw new Error("Check the delivery window.");
+	const frequencyCap = Math.round(Number(input.frequencyCap));
+	if (!Number.isFinite(ttlHours) || !Number.isFinite(delaySeconds) || !Number.isFinite(frequencyCap)) throw new Error("Check the delivery window.");
+	const scheduleAt = cleanInstant(input.scheduleAt, "Start");
+	const endsAt = cleanInstant(input.endsAt, "End");
 	return {
 		channel: input.channel,
 		qualification: input.qualification,
@@ -138,12 +133,37 @@ function cleanDraft(input) {
 		image: cleanImage(input.image ?? ""),
 		video: cleanVideo(input.video ?? ""),
 		button: (input.button ?? "").trim().slice(0, 24),
+		ctaLink: cleanLink(input.ctaLink ?? ""),
 		delivery: input.delivery,
+		scheduleAt,
+		endsAt,
 		ttlHours,
 		delaySeconds,
 		quietHours: Boolean(input.quietHours),
-		goal: (input.goal ?? "").trim().slice(0, 80)
+		frequency: input.frequency,
+		frequencyCap,
+		goal: goalLabel(input.goalMetric),
+		goalMetric: input.goalMetric,
+		attributes: cleanAttributes(input.attributes)
 	};
+}
+function cleanAttributes(value) {
+	if (!value || value.length === 0) return [];
+	const next = [];
+	for (const item of value) {
+		if (!isBehaviorAttribute(item)) throw new Error("That behavior attribute is not recognized.");
+		if (!next.includes(item)) next.push(item);
+	}
+	const problem = attributeError(next);
+	if (problem) throw new Error(problem);
+	return next;
+}
+function cleanInstant(value, label) {
+	const raw = (value ?? "").trim();
+	if (!raw) return "";
+	const date = parseInstant(raw);
+	if (!date) throw new Error(`${label} is not a valid date.`);
+	return date.toISOString();
 }
 var loadAccount = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(createSsrRpc("e338c5da8d4e59407e7f8ca5f8237db98428d53f198e62a3e3d64b81d87a1be4"));
 var completeRegistration = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
@@ -154,6 +174,18 @@ var completeRegistration = createServerFn({ method: "POST" }).middleware([authMi
 	};
 }).handler(createSsrRpc("be598046bfd5c09c1fb60919bedf47340bd2acc12bf3c5cc2bd2592ce35f442c"));
 var sendPush = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => cleanDraft(input)).handler(createSsrRpc("189de9d168ac3b924cb0e8f126fb4903cf128e4d5e6dd17aa8a92c52c0891f61"));
+var saveSegment = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
+	const problem = segmentError(input ?? {
+		name: "",
+		rules: []
+	});
+	if (problem) throw new Error(problem);
+	return {
+		id: (input.id ?? "").trim(),
+		name: input.name.trim(),
+		rules: input.rules
+	};
+}).handler(createSsrRpc("62f5dc1f092f45c87b3265e464106a7f18432dfd1be6d5bd4c7c1e3c24a9da96"));
 var addDevice = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
 	if (input?.platform !== "android" && input?.platform !== "ios") throw new Error("Choose Android or iOS.");
 	if (!TAGS.includes(input?.tag)) throw new Error("Choose a tag.");
@@ -275,15 +307,21 @@ var runTest = createServerFn({ method: "POST" }).middleware([authMiddleware]).va
 	const title = (input?.title ?? "").trim();
 	const body = (input?.body ?? "").trim();
 	const link = (input?.link ?? "").trim();
+	const button = (input?.button ?? "").trim().slice(0, 24);
+	const ctaLink = (input?.ctaLink ?? "").trim();
 	if (!connectionId) throw new Error("Choose a connection.");
 	if (!title || title.length > 65) throw new Error("Title is required, up to 65 characters.");
 	if (!body || body.length > 180) throw new Error("Message is required, up to 180 characters.");
 	if (link.length > 500 || /^(javascript|data|vbscript):/i.test(link)) throw new Error("That deep link is not allowed.");
+	if (ctaLink.length > 500 || /^(javascript|data|vbscript):/i.test(ctaLink)) throw new Error("That deep link is not allowed.");
+	if (button && !ctaLink && !link) throw new Error("The button needs a deep link.");
 	return {
 		connectionId,
 		title,
 		body,
-		link
+		link,
+		button,
+		ctaLink
 	};
 }).handler(createSsrRpc("39f5411c550fe32045b3f0523f8d78d7b937333f12ae4cad8f2f8a4e0f86d89a"));
 var registerEnterprise = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
@@ -315,4 +353,4 @@ var connectToken = createServerFn({ method: "POST" }).middleware([authMiddleware
 	};
 }).handler(createSsrRpc("6cd9b078c6b114a7009caec8b27ab039e9317d436d6c6215eaa4c86e40be4e85"));
 //#endregion
-export { setBusinessPlan as C, updateBrand as D, setOwnPlan as E, setBusinessGrants as S, setMemberRole as T, removeConnection as _, addConnection as a, runTest as b, completeRegistration as c, formatCount as d, formatWhen as f, registerEnterprise as g, loadAccount as h, addBusinessUser as i, connectToken as l, issueInvoice as m, Input as n, addDevice as o, inviteMember as p, acceptEnterprise as r, cn as s, Button as t, dropDevice as u, removeMember as v, setCapPreview as w, sendPush as x, resetWorkspace as y };
+export { setBusinessGrants as C, setOwnPlan as D, setMemberRole as E, updateBrand as O, sendPush as S, setCapPreview as T, removeConnection as _, addConnection as a, runTest as b, completeRegistration as c, formatCount as d, formatWhen as f, registerEnterprise as g, loadAccount as h, addBusinessUser as i, connectToken as l, issueInvoice as m, Input as n, addDevice as o, inviteMember as p, acceptEnterprise as r, cn as s, Button as t, dropDevice as u, removeMember as v, setBusinessPlan as w, saveSegment as x, resetWorkspace as y };

@@ -1,15 +1,15 @@
 import { o as __toESM } from "../_runtime.mjs";
 import { B as require_react, b as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
-import { _ as nextPlan, a as RIGHTS, b as quoteUsage, c as ROLE_LABEL, d as formatInr, i as PLAN_RATES, o as RIGHT_ROWS, s as ROLES, y as planLabel } from "./owner-access-gxEwVfLU.mjs";
-import { a as audienceLabel, b as tokenCounts, c as chartSeries, h as reviewCampaign, i as TAGS, o as audienceSize, r as STEPS, v as stateLabel, y as tagLabel } from "./middleware-fDVXmQad.mjs";
-import { c as completeRegistration, d as formatCount, f as formatWhen, n as Input, s as cn, t as Button } from "./account-fns-7GP3bSk7.mjs";
-import { i as usePush, n as UserButton, r as useCurrentUserState, t as RedirectToSignIn } from "./gates-CN0gzG2z.mjs";
+import { _ as nextPlan, a as RIGHTS, b as quoteUsage, c as ROLE_LABEL, d as formatInr, i as PLAN_RATES, o as RIGHT_ROWS, s as ROLES, y as planLabel } from "./owner-access-D4e8lj_h.mjs";
+import { C as frequencyLabel, F as isoToIstInput, I as istInputToIso, J as stateLabel, K as segmentError, L as matchesAll, O as isBehaviorAttribute, P as isSegmentRule, Q as tokenCounts, S as formatSchedule, T as imageError, U as reviewCampaign, V as permissionLabel, X as suggestStart, Y as suggestEnd, Z as tagLabel, a as IOS_EVENTS, b as describeRule, c as STEPS, d as attributeLabel, f as audienceLabel, g as chartSeries, h as behaviorSummary, i as GOAL_METRICS, l as TAGS, m as behaviorLabel, o as PERMISSIONS, s as SAMPLE_DISH, t as APP_EVENTS, v as ctaHref, w as goalLabel, x as destinationPath, y as defaultBehavior } from "./middleware-qnVsyvPC.mjs";
+import { c as completeRegistration, d as formatCount, f as formatWhen, n as Input, s as cn, t as Button } from "./account-fns-DfB75Ss1.mjs";
+import { i as usePush, n as UserButton, r as useCurrentUserState, t as RedirectToSignIn } from "./gates-BuKxug9q.mjs";
 import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
 import { a as ResponsiveContainer, i as Bar, n as YAxis, o as Tooltip, r as XAxis, t as BarChart } from "../_libs/recharts+[...].mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-C_ERKh0G.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-CMIFK_bW.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-function Phone({ platform, title, body, link, image, video, appName, logo, pulse, surface = "lock", button = "", onPlatform }) {
+function Phone({ platform, title, body, link, image, video, appName, logo, pulse, surface = "lock", button = "", ctaLink = "", onPlatform }) {
 	const now = /* @__PURE__ */ new Date();
 	const time = now.toLocaleTimeString("en-IN", {
 		hour: "numeric",
@@ -17,7 +17,21 @@ function Phone({ platform, title, body, link, image, video, appName, logo, pulse
 	});
 	const show = title.trim().length > 0 || body.trim().length > 0;
 	const [logoFailed, setLogoFailed] = (0, import_react.useState)(false);
+	const [opened, setOpened] = (0, import_react.useState)(null);
 	const mark = (appName.trim() || "N").charAt(0).toUpperCase();
+	const messageLink = link.trim();
+	const buttonLink = ctaLink.trim() || messageLink;
+	const openHref = opened === "button" ? buttonLink : messageLink;
+	const sameScreen = Boolean(messageLink) && destinationPath(buttonLink) === destinationPath(messageLink);
+	const showImage = Boolean(image) && (opened === "link" || opened === "button" && sameScreen);
+	(0, import_react.useEffect)(() => {
+		setOpened(null);
+	}, [
+		link,
+		image,
+		ctaLink,
+		pulse
+	]);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "mx-auto w-60",
 		children: [
@@ -57,55 +71,66 @@ function Phone({ platform, title, body, link, image, video, appName, logo, pulse
 								month: "long"
 							})
 						}),
-						surface === "lock" ? show ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
-							className: "banner-in mx-3 max-h-64 overflow-hidden rounded-sm bg-notif p-3 text-foreground",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-2",
-									children: [
-										logo && !logoFailed ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-											src: logo,
-											alt: "",
-											className: "size-6 rounded-sm object-cover",
-											onError: () => setLogoFailed(true)
-										}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: "flex size-6 items-center justify-center rounded-sm bg-primary font-mono text-xs font-semibold text-primary-foreground",
-											children: mark
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-											className: "truncate text-xs font-medium",
-											children: appName || "App"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-											className: "ml-auto text-xs text-muted-foreground",
-											children: "now"
-										})
-									]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-									className: "pt-2 text-sm font-semibold leading-snug",
-									children: title.trim() || "Untitled"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "pt-1 text-sm leading-snug text-muted-foreground",
-									children: body.trim() || "Message body"
-								}),
-								image ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-									src: image,
-									alt: "",
-									className: "mt-2 h-16 w-full rounded-sm object-cover"
-								}) : null,
-								video ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("video", {
-									src: video,
-									className: "mt-2 h-16 w-full rounded-sm",
-									controls: true,
-									playsInline: true
-								}) : null,
-								link.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "truncate pt-2 font-mono text-xs text-subtle",
-									children: link.trim()
-								}) : null
-							]
+						surface === "lock" ? show ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "banner-in mx-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								className: "w-full overflow-hidden rounded-sm bg-notif p-3 text-left text-foreground",
+								onClick: () => messageLink && setOpened("link"),
+								disabled: !messageLink,
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-2",
+										children: [
+											logo && !logoFailed ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+												src: logo,
+												alt: "",
+												className: "size-6 rounded-sm object-cover",
+												onError: () => setLogoFailed(true)
+											}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												className: "flex size-6 items-center justify-center rounded-sm bg-primary font-mono text-xs font-semibold text-primary-foreground",
+												children: mark
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "truncate text-xs font-medium",
+												children: appName || "App"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "ml-auto text-xs text-muted-foreground",
+												children: "now"
+											})
+										]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+										className: "pt-2 text-sm font-semibold leading-snug",
+										children: title.trim() || "Untitled"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "pt-1 text-sm leading-snug text-muted-foreground",
+										children: body.trim() || "Message body"
+									}),
+									image ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+										src: image,
+										alt: "",
+										className: "mt-2 h-16 w-full rounded-sm object-cover"
+									}) : null,
+									video ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("video", {
+										src: video,
+										className: "mt-2 h-16 w-full rounded-sm",
+										controls: true,
+										playsInline: true
+									}) : null,
+									messageLink ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "truncate pt-2 font-mono text-xs text-subtle",
+										children: messageLink
+									}) : null
+								]
+							}), button.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: "mt-2 h-9 w-full truncate rounded-sm bg-primary px-3 text-center text-sm font-medium text-primary-foreground",
+								onClick: () => setOpened("button"),
+								children: button.trim()
+							}) : null]
 						}, pulse) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							className: "px-6 pt-8 text-center text-sm text-screen-muted",
 							children: "Write a message to preview it on the lock screen."
@@ -118,39 +143,77 @@ function Phone({ platform, title, body, link, image, video, appName, logo, pulse
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-3 h-2 w-24 rounded-sm bg-screen-muted/40" }),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-2 h-2 w-16 rounded-sm bg-screen-muted/30" }),
-								show ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
-									className: cn("banner-in overflow-hidden bg-notif p-3 text-foreground", surface === "modal" ? "mt-10 rounded-lg" : "mt-4 rounded-sm"),
-									children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-											className: "text-sm font-semibold leading-snug",
-											children: title.trim() || "Untitled"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-											className: "pt-1 text-sm leading-snug text-muted-foreground",
-											children: body.trim() || "Message body"
-										}),
-										image ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-											src: image,
-											alt: "",
-											className: "mt-2 h-14 w-full rounded-sm object-cover"
-										}) : null,
-										surface === "primer" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-											className: "mt-3 h-9 rounded-sm bg-primary text-center text-sm font-medium leading-9 text-primary-foreground",
-											children: button.trim() || "Allow"
-										}) : null
-									]
+								show ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: cn("banner-in", surface === "modal" ? "mt-10" : "mt-4"),
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										className: "w-full overflow-hidden rounded-sm bg-notif p-3 text-left text-foreground",
+										onClick: () => messageLink && setOpened("link"),
+										disabled: !messageLink,
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+												className: "text-sm font-semibold leading-snug",
+												children: title.trim() || "Untitled"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "pt-1 text-sm leading-snug text-muted-foreground",
+												children: body.trim() || "Message body"
+											}),
+											image ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+												src: image,
+												alt: "",
+												className: "mt-2 h-14 w-full rounded-sm object-cover"
+											}) : null
+										]
+									}), button.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										className: "mt-2 h-9 w-full truncate rounded-sm bg-primary px-3 text-center text-sm font-medium text-primary-foreground",
+										onClick: () => setOpened("button"),
+										children: button.trim()
+									}) : null]
 								}, pulse) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 									className: "pt-6 text-center text-sm text-screen-muted",
 									children: "Write the in-app message."
 								})
 							]
-						})
+						}),
+						opened && openHref ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "absolute inset-0 flex flex-col bg-screen px-3 pt-8",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: "self-start text-xs font-medium text-screen-fg",
+									onClick: () => setOpened(null),
+									children: "Back"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "truncate pt-3 font-mono text-xs text-screen-muted",
+									children: destinationPath(openHref)
+								}),
+								showImage ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+									src: image,
+									alt: "",
+									className: "mt-3 h-40 w-full rounded-sm bg-foreground object-contain"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "pt-6 text-sm text-screen-muted",
+									children: "This screen has no image."
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+									className: "pt-3 text-sm font-semibold text-screen-fg",
+									children: title.trim() || "Untitled"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "pt-1 text-sm text-screen-muted",
+									children: body.trim()
+								})
+							]
+						}) : null
 					]
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "pt-3 text-center text-xs text-muted-foreground",
-				children: surface === "lock" ? "Lock screen" : surface === "primer" ? "Permission primer" : "In-app message"
+				children: opened ? "Deep link screen" : surface === "lock" ? "Lock screen" : surface === "primer" ? "Permission primer" : "In-app message"
 			})
 		]
 	});
@@ -159,6 +222,7 @@ function ActivityView() {
 	const campaigns = usePush((s) => s.campaigns);
 	const appName = usePush((s) => s.businessName);
 	const logo = usePush((s) => s.logo);
+	const segments = usePush((s) => s.segments);
 	const [selected, setSelected] = (0, import_react.useState)(campaigns[0]?.id ?? null);
 	const [preview, setPreview] = (0, import_react.useState)("ios");
 	const current = campaigns.find((item) => item.id === selected) ?? null;
@@ -176,6 +240,7 @@ function ActivityView() {
 				className: "flex flex-col gap-2",
 				children: campaigns.map((campaign) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CampaignRow, {
 					campaign,
+					segments,
 					on: campaign.id === selected,
 					onSelect: () => setSelected(campaign.id)
 				}) }, campaign.id))
@@ -194,6 +259,7 @@ function ActivityView() {
 				pulse: 0,
 				surface: current.channel === "inapp" ? current.layout ?? "banner" : "lock",
 				button: current.button,
+				ctaLink: current.ctaLink,
 				onPlatform: setPreview
 			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "text-sm text-muted-foreground",
@@ -202,8 +268,14 @@ function ActivityView() {
 		})]
 	});
 }
-function CampaignRow({ campaign, on, onSelect }) {
+function segmentName(audience, segments) {
+	if (audience.kind !== "segment") return audienceLabel(audience);
+	const id = audience.segmentId;
+	return segments.find((item) => item.id === id)?.name ?? "Segment";
+}
+function CampaignRow({ campaign, segments, on, onSelect }) {
 	const rate = campaign.targeted === 0 ? 0 : Math.round(campaign.delivered / campaign.targeted * 100);
+	const audience = segmentName(campaign.audience, segments);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 		type: "button",
 		onClick: onSelect,
@@ -225,8 +297,13 @@ function CampaignRow({ campaign, on, onSelect }) {
 				children: [
 					campaign.channel === "inapp" ? "In-app" : "Push",
 					" · ",
-					campaign.isTest ? `Test run · ${campaign.testLabel || "Connection"}` : audienceLabel(campaign.audience),
-					campaign.deliveryState && campaign.deliveryState !== "sent" ? ` · ${stateLabel(campaign.deliveryState)}` : ""
+					campaign.isTest ? `Test run · ${campaign.testLabel || "Connection"}` : audience,
+					campaign.deliveryState && campaign.deliveryState !== "sent" ? ` · ${stateLabel(campaign.deliveryState, campaign.qualification)}` : "",
+					campaign.frequency && campaign.frequency !== "once" ? ` · ${frequencyLabel(campaign.frequency, campaign.frequencyCap ?? 1)}` : "",
+					campaign.scheduleAt ? ` · ${formatSchedule(campaign.scheduleAt)}` : "",
+					campaign.button ? ` · ${campaign.button}` : "",
+					campaign.goalMetric ? ` · ${goalLabel(campaign.goalMetric)} · ${formatCount(campaign.goalHits ?? 0)} hit the goal` : "",
+					campaign.attributes?.length ? ` · ${campaign.attributes.filter(isBehaviorAttribute).map(attributeLabel).join(", ")}` : ""
 				]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
@@ -360,6 +437,8 @@ function ConnectView() {
 	const [title, setTitle] = (0, import_react.useState)("Test from Nock");
 	const [body, setBody] = (0, import_react.useState)("This is a sandbox delivery to the connected app.");
 	const [link, setLink] = (0, import_react.useState)("metrobites://test");
+	const [button, setButton] = (0, import_react.useState)("Open");
+	const [ctaLink, setCtaLink] = (0, import_react.useState)("");
 	const [tokenPlatform, setTokenPlatform] = (0, import_react.useState)("android");
 	const [tokenName, setTokenName] = (0, import_react.useState)("");
 	const [token, setToken] = (0, import_react.useState)("");
@@ -588,7 +667,9 @@ function ConnectView() {
 							connectionId: chosen.id,
 							title,
 							body,
-							link
+							link,
+							button,
+							ctaLink
 						});
 						if (error) toast.error(error);
 						else toast.success(`Test recorded for ${chosen.name}.`);
@@ -637,6 +718,22 @@ function ConnectView() {
 						children: ["Deep link", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
 							value: link,
 							onChange: (e) => setLink(e.target.value)
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+						className: "flex flex-col gap-1 text-sm font-medium",
+						children: ["Button", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							value: button,
+							maxLength: 24,
+							onChange: (e) => setButton(e.target.value)
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+						className: "flex flex-col gap-1 text-sm font-medium",
+						children: ["Button deep link", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							value: ctaLink,
+							onChange: (e) => setCtaLink(e.target.value),
+							placeholder: "Leave empty to use the message deep link"
 						})]
 					}),
 					!grants.test ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
@@ -828,6 +925,7 @@ function DevicesView() {
 								className: "rounded-sm bg-muted px-2 py-1",
 								children: tagLabel(device.tag)
 							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: behaviorSummary(device.behavior ?? defaultBehavior(device.status)) }),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 								className: "tabular-nums",
 								children: formatWhen(device.lastSeen)
@@ -1188,6 +1286,266 @@ function PlanView() {
 		]
 	});
 }
+var BEHAVIORS = [
+	"opened",
+	"dismissed",
+	"sessions",
+	"purchases",
+	"days_since_open",
+	"returned_next_day",
+	"permission"
+];
+var BLANK = {
+	behavior: "opened",
+	op: "at_least",
+	value: 1
+};
+function ruleFor(behavior) {
+	if (behavior === "permission") return {
+		behavior,
+		value: "allowed"
+	};
+	if (behavior === "returned_next_day") return {
+		behavior,
+		value: true
+	};
+	return {
+		behavior,
+		op: "at_least",
+		value: 1
+	};
+}
+function SegmentsView() {
+	const segments = usePush((s) => s.segments);
+	const subscribers = usePush((s) => s.subscribers);
+	const save = usePush((s) => s.saveSegment);
+	const [editing, setEditing] = (0, import_react.useState)(null);
+	const [name, setName] = (0, import_react.useState)("");
+	const [rules, setRules] = (0, import_react.useState)([BLANK]);
+	const [saving, setSaving] = (0, import_react.useState)(false);
+	const problem = segmentError({
+		id: editing ?? void 0,
+		name,
+		rules
+	});
+	const liveRules = rules.filter(isSegmentRule);
+	const names = subscribers.filter((person) => liveRules.length > 0 && matchesAll(person.behavior, liveRules)).map((person) => person.name);
+	function load(segment) {
+		setEditing(segment.id);
+		setName(segment.name);
+		setRules(segment.rules);
+	}
+	function clear() {
+		setEditing(null);
+		setName("");
+		setRules([BLANK]);
+	}
+	function setBehavior(index, behavior) {
+		setRules((current) => current.map((rule, item) => item === index ? ruleFor(behavior) : rule));
+	}
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex flex-col gap-8 lg:flex-row lg:items-start",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+			className: "order-2 flex min-w-0 flex-1 flex-col gap-4 lg:order-1",
+			onSubmit: (event) => {
+				event.preventDefault();
+				if (problem || saving) {
+					if (problem) toast.error(problem);
+					return;
+				}
+				setSaving(true);
+				(async () => {
+					const error = await save({
+						id: editing ?? void 0,
+						name,
+						rules
+					});
+					setSaving(false);
+					if (error) {
+						toast.error(error);
+						return;
+					}
+					toast.success(editing ? "Segment updated." : "Segment created.");
+					if (!editing) clear();
+				})();
+			},
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+					className: "font-display text-3xl font-medium tracking-tight",
+					children: "Segments"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "pt-1 text-sm text-pretty text-muted-foreground",
+					children: "A segment is who matches every rule. Opens, dismisses, and sessions are the last 7 days. Purchases are the last 30 days. Returning the next day is 1-day retention after a message."
+				})] }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+					className: "flex flex-col gap-1 text-sm font-medium",
+					children: ["Name", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						value: name,
+						maxLength: 40,
+						onChange: (e) => setName(e.target.value),
+						placeholder: "Opened, still buying"
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex flex-col gap-3",
+					children: rules.map((rule, index) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "grid gap-2 rounded-xl border border-border bg-card p-3 sm:grid-cols-[1.4fr_1fr_auto]",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-sm font-medium",
+								children: ["Behavior", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("select", {
+									className: "h-11 rounded-sm border border-border bg-card px-3 text-sm",
+									value: rule.behavior,
+									onChange: (e) => setBehavior(index, e.target.value),
+									children: BEHAVIORS.map((behavior) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+										value: behavior,
+										disabled: rules.some((item, itemIndex) => itemIndex !== index && item.behavior === behavior),
+										children: behaviorLabel(behavior)
+									}, behavior))
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RuleValue, {
+								rule,
+								onChange: (next) => setRules((current) => current.map((item, itemIndex) => itemIndex === index ? next : item))
+							}),
+							rules.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: "h-11 self-end rounded-sm px-3 text-sm text-danger",
+								onClick: () => setRules((current) => current.filter((_, item) => item !== index)),
+								children: "Remove"
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {})
+						]
+					}, index))
+				}),
+				rules.length < 4 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "self-start text-sm font-medium underline",
+					onClick: () => {
+						const next = BEHAVIORS.find((behavior) => rules.every((rule) => rule.behavior !== behavior));
+						if (next) setRules((current) => [...current, ruleFor(next)]);
+					},
+					children: "Add behavior"
+				}) : null,
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-sm text-muted-foreground",
+					children: names.length === 0 ? "No known device matches yet." : `${formatCount(names.length)} of ${formatCount(subscribers.length)} devices · ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}`
+				}),
+				problem && name.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-sm text-danger",
+					children: problem
+				}) : null,
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+						type: "submit",
+						disabled: saving || Boolean(problem),
+						children: saving ? "Saving…" : editing ? "Update segment" : "Create segment"
+					}), editing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+						type: "button",
+						variant: "outline",
+						onClick: clear,
+						children: "New segment"
+					}) : null]
+				})
+			]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+			className: "order-1 flex flex-col gap-2 lg:order-2 lg:w-80 lg:shrink-0",
+			children: segments.map((segment) => {
+				const matched = subscribers.filter((person) => matchesAll(person.behavior, segment.rules));
+				return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					onClick: () => load(segment),
+					"aria-pressed": editing === segment.id,
+					className: cn("w-full rounded-xl border px-4 py-3 text-left", editing === segment.id ? "border-primary bg-card" : "border-border bg-card"),
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "font-medium",
+							children: segment.name
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+							className: "pt-1 text-sm text-muted-foreground",
+							children: segment.rules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: describeRule(rule) }, rule.behavior))
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "pt-2 text-xs tabular-nums text-muted-foreground",
+							children: matched.length === 1 ? "1 device" : `${formatCount(matched.length)} devices`
+						})
+					]
+				}) }, segment.id);
+			})
+		})]
+	});
+}
+function RuleValue({ rule, onChange }) {
+	if (rule.behavior === "permission") return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+		className: "flex flex-col gap-1 text-sm font-medium",
+		children: ["Is", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("select", {
+			className: "h-11 rounded-sm border border-border bg-card px-3 text-sm",
+			value: rule.value,
+			onChange: (e) => onChange({
+				behavior: "permission",
+				value: e.target.value
+			}),
+			children: PERMISSIONS.map((value) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+				value,
+				children: permissionLabel(value)
+			}, value))
+		})]
+	});
+	if (rule.behavior === "returned_next_day") return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+		className: "flex flex-col gap-1 text-sm font-medium",
+		children: ["Did they", /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+			className: "h-11 rounded-sm border border-border bg-card px-3 text-sm",
+			value: rule.value ? "yes" : "no",
+			onChange: (e) => onChange({
+				behavior: "returned_next_day",
+				value: e.target.value === "yes"
+			}),
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+				value: "yes",
+				children: "Yes"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+				value: "no",
+				children: "No"
+			})]
+		})]
+	});
+	const max = rule.behavior === "days_since_open" ? 365 : 500;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "grid grid-cols-2 gap-2",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+			className: "flex flex-col gap-1 text-sm font-medium",
+			children: ["Compare", /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+				className: "h-11 rounded-sm border border-border bg-card px-3 text-sm",
+				value: rule.op,
+				onChange: (e) => onChange({
+					...rule,
+					op: e.target.value === "at_most" ? "at_most" : "at_least"
+				}),
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+					value: "at_least",
+					children: "At least"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+					value: "at_most",
+					children: "At most"
+				})]
+			})]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+			className: "flex flex-col gap-1 text-sm font-medium",
+			children: ["Value", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+				type: "number",
+				min: 0,
+				max,
+				value: rule.value,
+				onChange: (e) => onChange({
+					behavior: rule.behavior,
+					op: rule.op,
+					value: Math.round(Number(e.target.value))
+				})
+			})]
+		})]
+	});
+}
 var CHOICES = [
 	{
 		id: "all",
@@ -1232,16 +1590,24 @@ var EMPTY = {
 	link: "metrobites://order/4821",
 	image: "",
 	video: "",
-	button: "Allow",
+	button: "Track order",
+	ctaLink: "",
 	delivery: "now",
+	scheduleAt: "",
+	endsAt: "",
 	ttlHours: 24,
 	delaySeconds: 0,
 	quietHours: true,
-	goal: "Order opened"
+	frequency: "once",
+	frequencyCap: 1,
+	goal: "Opened the notification",
+	goalMetric: "opened",
+	attributes: []
 };
 function SendView() {
 	const reach = usePush((s) => s.reach);
 	const subscribers = usePush((s) => s.subscribers);
+	const segments = usePush((s) => s.segments);
 	const plan = usePush((s) => s.plan);
 	const logo = usePush((s) => s.logo);
 	const appName = usePush((s) => s.businessName);
@@ -1256,12 +1622,14 @@ function SendView() {
 		platform: device.platform,
 		tag: device.tag,
 		status: device.status,
-		pushToken: device.pushToken
+		pushToken: device.pushToken,
+		behavior: device.behavior
 	}));
 	const reviewed = reviewCampaign({
 		draft,
 		reach,
 		devices,
+		segments,
 		plan
 	});
 	const tokens = tokenCounts(devices, draft.audience);
@@ -1272,11 +1640,21 @@ function SendView() {
 			...next
 		}));
 	}
+	function toggleAttribute(item) {
+		const has = draft.attributes.includes(item);
+		const next = has ? draft.attributes.filter((current) => current !== item) : [...draft.attributes, item];
+		if (!has && next.length > 4) {
+			toast.error("Use up to 4 behavior attributes.");
+			return;
+		}
+		patch({ attributes: next });
+	}
 	function go(next) {
 		const problem = reviewCampaign({
 			draft,
 			reach,
 			devices,
+			segments,
 			plan
 		}).error;
 		if ((step === "What" || step === "When" || next === "Publish" || next === "When") && problem && STEPS.indexOf(next) > index) {
@@ -1304,7 +1682,16 @@ function SendView() {
 			return;
 		}
 		setPulse((n) => n + 1);
-		toast.success(stateLabel(reviewed.state));
+		toast.success(stateLabel(reviewed.state, draft.qualification));
+	}
+	function setFrequency(frequency) {
+		const cap = frequency === "daily" ? Math.min(draft.frequencyCap || 1, 5) : Math.min(draft.frequencyCap || 1, 10);
+		const start = draft.delivery === "later" && draft.scheduleAt ? draft.scheduleAt : (/* @__PURE__ */ new Date()).toISOString();
+		patch({
+			frequency,
+			frequencyCap: frequency === "once" ? 1 : Math.max(1, cap),
+			endsAt: frequency === "daily" || frequency === "weekly" ? draft.endsAt || suggestEnd(start) : draft.endsAt
+		});
 	}
 	const surface = draft.channel === "push" ? "lock" : draft.layout;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -1351,7 +1738,9 @@ function SendView() {
 								detail: "Lock screen · FCM and APNs",
 								onClick: () => patch({
 									channel: "push",
-									layout: "lock"
+									layout: "lock",
+									frequency: draft.frequency === "session" ? "once" : draft.frequency,
+									frequencyCap: draft.frequency === "session" ? 1 : draft.frequencyCap
 								})
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
 								on: draft.channel === "inapp",
@@ -1423,45 +1812,112 @@ function SendView() {
 								})
 							]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
 							className: "flex flex-col gap-1 text-sm font-medium",
-							children: ["Goal", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								value: draft.goal,
-								maxLength: 80,
-								onChange: (e) => patch({ goal: e.target.value }),
-								placeholder: "Optional conversion, such as Order opened"
-							})]
+							children: "Goal"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex flex-wrap gap-2",
+							children: GOAL_METRICS.map((metric) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+								on: draft.goalMetric === metric,
+								label: goalLabel(metric),
+								detail: "",
+								onClick: () => patch({
+									goalMetric: metric,
+									goal: goalLabel(metric)
+								})
+							}, metric))
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-sm text-muted-foreground",
+							children: "Counted after delivery. A denied or not-asked device cannot count as an open."
 						})
 					]
 				}) : null,
 				step === "Who" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
-						className: "pb-2 text-sm font-medium",
-						children: "Audience"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "flex flex-wrap gap-2",
-						children: CHOICES.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-pressed": choice === item.id,
-							onClick: () => {
-								setChoice(item.id);
-								patch({ audience: item.audience });
-								if (item.audience.kind === "platform") setPreview(item.audience.platform);
-							},
-							className: cn("h-10 rounded-sm px-3 text-sm font-medium", choice === item.id ? "bg-primary text-primary-foreground" : "bg-muted"),
-							children: item.label
-						}, item.id))
-					})] }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+							className: "pb-2 text-sm font-medium",
+							children: "Audience"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex flex-wrap gap-2",
+							children: CHOICES.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								"aria-pressed": choice === item.id,
+								onClick: () => {
+									setChoice(item.id);
+									patch({ audience: item.audience });
+									if (item.audience.kind === "platform") setPreview(item.audience.platform);
+								},
+								className: cn("h-10 rounded-sm px-3 text-sm font-medium", choice === item.id ? "bg-primary text-primary-foreground" : "bg-muted"),
+								children: item.label
+							}, item.id))
+						}),
+						segments.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex flex-wrap gap-2 pt-3",
+							children: segments.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								"aria-pressed": choice === item.id,
+								onClick: () => {
+									setChoice(item.id);
+									patch({ audience: {
+										kind: "segment",
+										segmentId: item.id
+									} });
+								},
+								className: cn("h-10 rounded-sm px-3 text-sm font-medium", choice === item.id ? "bg-primary text-primary-foreground" : "bg-muted"),
+								children: item.name
+							}, item.id))
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "pt-3 text-sm text-muted-foreground",
+							children: "Create a segment to target behavior."
+						})
+					] }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+							className: "pb-2 text-sm font-medium",
+							children: "Behavior attributes"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "pb-2 text-sm text-muted-foreground",
+							children: "Every selected event must be true. App events follow the analytics names. iOS events are the notification permission."
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "pb-1 text-xs font-medium text-muted-foreground",
+							children: "App events"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex flex-wrap gap-2",
+							children: APP_EVENTS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Attr, {
+								on: draft.attributes.includes(item),
+								label: attributeLabel(item),
+								onClick: () => toggleAttribute(item)
+							}, item))
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "pb-1 pt-3 text-xs font-medium text-muted-foreground",
+							children: "iOS permission"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex flex-wrap gap-2",
+							children: IOS_EVENTS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Attr, {
+								on: draft.attributes.includes(item),
+								label: attributeLabel(item),
+								onClick: () => toggleAttribute(item)
+							}, item))
+						})
+					] }),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
 						className: "pt-3 text-sm tabular-nums text-muted-foreground",
 						children: [
 							"Estimated reach ",
-							formatCount(draft.layout === "primer" ? tokens.waiting : audienceSize(reach, draft.audience)),
+							formatCount(reviewed.targeted),
 							" · ",
-							audienceLabel(draft.audience)
+							audienceName(draft.audience, segments)
 						]
 					}),
-					reviewed.error && (draft.layout === "primer" || audienceSize(reach, draft.audience) === 0) ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					reviewed.error && reviewed.targeted === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 						className: "pt-2 text-sm text-danger",
 						children: reviewed.error
 					}) : null
@@ -1528,48 +1984,89 @@ function SendView() {
 								})
 							]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-							className: "flex flex-col gap-1 text-sm font-medium",
-							children: ["Deep link", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								value: draft.link,
-								onChange: (e) => patch({ link: e.target.value }),
-								placeholder: "app://order/4821"
-							})]
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", {
+							className: "rounded-xl border border-border p-3",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+									className: "px-1 text-sm font-medium",
+									children: "Deep link"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+									className: "flex flex-col gap-1 text-sm font-medium",
+									children: ["URL", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+										value: draft.link,
+										onChange: (e) => patch({ link: e.target.value }),
+										placeholder: "metrobites://order/4821"
+									})]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "pt-2 text-sm text-muted-foreground",
+									children: [
+										"The image opens on this screen when the person taps the message",
+										draft.link.trim() ? `: ${destinationPath(draft.link)}` : "",
+										"."
+									]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+									className: "flex flex-col gap-1 pt-3 text-sm font-medium",
+									children: [
+										"Image for this screen",
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+											value: draft.image.startsWith("data:") ? "" : draft.image,
+											onChange: (e) => patch({ image: e.target.value }),
+											placeholder: "https:// image"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "file",
+											accept: "image/png,image/jpeg,image/webp,image/gif",
+											className: "text-sm text-muted-foreground",
+											onChange: (event) => {
+												const file = event.target.files?.[0];
+												if (!file) return;
+												if (file.size > 12e4) {
+													toast.error("Image must be under 120 KB.");
+													return;
+												}
+												const reader = new FileReader();
+												reader.onload = () => patch({ image: typeof reader.result === "string" ? reader.result : "" });
+												reader.readAsDataURL(file);
+											}
+										})
+									]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: "mt-2 text-sm font-medium underline",
+									onClick: () => patch({ image: SAMPLE_DISH }),
+									children: "Use sample image"
+								}),
+								draft.image && draft.link.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+									src: draft.image,
+									alt: "",
+									className: "mt-3 h-24 w-full rounded-sm bg-foreground object-contain"
+								}) : null,
+								imageError(draft.image, draft.link) ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "pt-2 text-sm text-danger",
+									children: imageError(draft.image, draft.link)
+								}) : null
+							]
 						}),
-						draft.layout === "primer" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
 							className: "flex flex-col gap-1 text-sm font-medium",
 							children: ["Button", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
 								value: draft.button,
 								maxLength: 24,
-								onChange: (e) => patch({ button: e.target.value })
+								onChange: (e) => patch({ button: e.target.value }),
+								placeholder: "Track order"
 							})]
-						}) : null,
+						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
 							className: "flex flex-col gap-1 text-sm font-medium",
-							children: [
-								"Image",
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-									value: draft.image.startsWith("data:") ? "" : draft.image,
-									onChange: (e) => patch({ image: e.target.value }),
-									placeholder: "https:// image"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-									type: "file",
-									accept: "image/png,image/jpeg,image/webp,image/gif",
-									className: "text-sm text-muted-foreground",
-									onChange: (event) => {
-										const file = event.target.files?.[0];
-										if (!file) return;
-										if (file.size > 12e4) {
-											toast.error("Image must be under 120 KB.");
-											return;
-										}
-										const reader = new FileReader();
-										reader.onload = () => patch({ image: typeof reader.result === "string" ? reader.result : "" });
-										reader.readAsDataURL(file);
-									}
-								})
-							]
+							children: ["Button deep link", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								value: draft.ctaLink,
+								onChange: (e) => patch({ ctaLink: e.target.value }),
+								placeholder: "Leave empty to use the message deep link"
+							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
 							className: "flex flex-col gap-1 text-sm font-medium",
@@ -1585,26 +2082,94 @@ function SendView() {
 				step === "When" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
 					className: "flex flex-col gap-4",
 					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+								className: "pb-2 text-sm font-medium",
+								children: "Delivery"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex flex-wrap gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.delivery === "now",
+									label: "Now",
+									detail: "",
+									onClick: () => patch({ delivery: "now" })
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.delivery === "later",
+									label: "Custom time",
+									detail: "",
+									onClick: () => patch({
+										delivery: "later",
+										scheduleAt: draft.scheduleAt || suggestStart()
+									})
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "pt-2 text-sm text-muted-foreground",
+								children: draft.qualification === "past" ? "Past behavior sends at this time." : "Live and external triggers start accepting the action at this time. They do not send on the clock."
+							})
+						] }),
+						draft.delivery === "later" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Date and time (IST)", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								type: "datetime-local",
+								value: isoToIstInput(draft.scheduleAt),
+								onChange: (e) => patch({ scheduleAt: istInputToIso(e.target.value) })
+							})]
+						}) : null,
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
 							className: "pb-2 text-sm font-medium",
-							children: "Delivery"
+							children: "Frequency"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "flex flex-wrap gap-2",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
-								on: draft.delivery === "now",
-								label: "Now",
-								detail: "",
-								onClick: () => patch({ delivery: "now" })
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
-								on: draft.delivery === "later",
-								label: "Later",
-								detail: "",
-								onClick: () => patch({
-									delivery: "later",
-									qualification: draft.qualification === "past" ? "past" : "past"
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.frequency === "once",
+									label: "Once",
+									detail: "",
+									onClick: () => patch({
+										frequency: "once",
+										frequencyCap: 1
+									})
+								}),
+								draft.channel === "inapp" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.frequency === "session",
+									label: "Per session",
+									detail: "",
+									onClick: () => setFrequency("session")
+								}) : null,
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.frequency === "daily",
+									label: "Daily",
+									detail: "",
+									onClick: () => setFrequency("daily")
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.frequency === "weekly",
+									label: "Weekly",
+									detail: "",
+									onClick: () => setFrequency("weekly")
 								})
-							})]
+							]
 						})] }),
+						draft.frequency !== "once" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Cap per device", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								type: "number",
+								min: 1,
+								max: draft.frequency === "daily" ? 5 : 10,
+								value: draft.frequencyCap,
+								onChange: (e) => patch({ frequencyCap: Math.round(Number(e.target.value)) })
+							})]
+						}) : null,
+						draft.frequency === "daily" || draft.frequency === "weekly" || draft.channel === "inapp" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: [draft.frequency === "daily" || draft.frequency === "weekly" ? "End (IST)" : "Stop showing after (IST, optional)", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								type: "datetime-local",
+								value: isoToIstInput(draft.endsAt),
+								onChange: (e) => patch({ endsAt: istInputToIso(e.target.value) })
+							})]
+						}) : null,
 						draft.channel === "push" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
 							className: "flex flex-col gap-1 text-sm font-medium",
 							children: ["Time to live, hours", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
@@ -1630,7 +2195,7 @@ function SendView() {
 								type: "checkbox",
 								checked: draft.quietHours,
 								onChange: (e) => patch({ quietHours: e.target.checked })
-							}), "Quiet hours, 9pm to 9am"]
+							}), "Quiet hours, 9pm to 9am IST"]
 						}),
 						reviewed.error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							className: "text-sm text-danger",
@@ -1654,16 +2219,20 @@ function SendView() {
 									draft.qualification === "past" ? "Past behavior" : draft.qualification === "live" ? "Live behavior" : "External trigger"
 								] }),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
-									audienceLabel(draft.audience),
+									audienceName(draft.audience, segments),
+									draft.attributes.length ? ` · ${draft.attributes.map(attributeLabel).join(", ")}` : "",
 									" · ",
 									formatCount(reviewed.targeted),
 									" reachable"
 								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: draft.button.trim() ? `${draft.button.trim()} → ${ctaHref(draft)}` : "No button. A tap uses the deep link." }),
+								draft.image ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: ["Image opens on ", destinationPath(draft.link) || "the deep link"] }) : null,
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
-									draft.delivery === "now" ? "Send now" : "Schedule",
+									draft.delivery === "now" ? "Send now" : formatSchedule(draft.scheduleAt) || "Custom time",
 									" · ",
-									stateLabel(reviewed.state)
+									stateLabel(reviewed.state, draft.qualification)
 								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [frequencyLabel(draft.frequency, draft.frequencyCap), draft.endsAt ? ` · until ${formatSchedule(draft.endsAt)}` : ""] }),
 								draft.channel === "push" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
 									"TTL ",
 									draft.ttlHours,
@@ -1677,7 +2246,11 @@ function SendView() {
 									"s · ",
 									draft.layout
 								] }),
-								draft.goal ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: ["Goal · ", draft.goal] }) : null
+								draft.goalMetric ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
+									"Goal · ",
+									goalLabel(draft.goalMetric),
+									reviewed.state === "sent" ? ` · ${formatCount(reviewed.goalHits)}` : " · counted after it sends"
+								] }) : null
 							]
 						}),
 						reviewed.error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
@@ -1714,10 +2287,24 @@ function SendView() {
 				pulse,
 				surface: surface === "lock" ? "lock" : surface,
 				button: draft.button,
+				ctaLink: draft.ctaLink,
 				onPlatform: setPreview
 			})
 		})]
 	});
+}
+function Attr({ on, label, onClick }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+		type: "button",
+		"aria-pressed": on,
+		onClick,
+		className: cn("h-10 rounded-sm px-3 font-mono text-xs font-medium", on ? "bg-primary text-primary-foreground" : "bg-muted"),
+		children: label
+	});
+}
+function audienceName(audience, segments) {
+	if (audience.kind === "segment") return segments.find((item) => item.id === audience.segmentId)?.name ?? "Segment";
+	return audienceLabel(audience);
 }
 function Choice({ on, label, detail, onClick }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
@@ -2060,6 +2647,11 @@ var NAV = [
 		right: "send"
 	},
 	{
+		id: "segments",
+		label: "Segments",
+		right: "send"
+	},
+	{
 		id: "devices",
 		label: "Devices",
 		right: "devices"
@@ -2216,6 +2808,7 @@ function Shell() {
 						ready && !loadError && !businessId && view !== "system" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(OnboardView, {}) : null,
 						ready && !loadError && businessId && kind === "enterprise" && !onboarded ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EnterpriseOnboard, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "send" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SendView, {}) : null,
+						ready && !loadError && businessId && onboarded && view === "segments" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SegmentsView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "devices" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DevicesView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "activity" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ActivityView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "plan" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlanView, {}) : null,

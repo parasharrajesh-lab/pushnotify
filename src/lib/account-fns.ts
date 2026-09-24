@@ -16,7 +16,22 @@ import {
   type SeatRow,
 } from "@/lib/account-types";
 import { checkPushToken, invitesAllowed, periodLabel, quoteUsage, sendsAllowed } from "@/lib/billing";
-import { isChannel, isLayout, isQualification, readProcess, reviewCampaign, type CampaignDraft } from "@/lib/notify";
+import { imageFileError, isChannel, isFrequency, isLayout, isQualification, parseInstant, readProcess, reviewCampaign, type CampaignDraft } from "@/lib/notify";
+import {
+  attributeError,
+  connectedBehavior,
+  goalLabel,
+  isBehaviorAttribute,
+  isGoalMetric,
+  isSegmentRule,
+  parseBehavior,
+  segmentError,
+  starterSegments,
+  type BehaviorAttribute,
+  type SavedSegment,
+  type SegmentDraft,
+  type SegmentRule,
+} from "@/lib/behavior";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql, type Sql } from "@/lib/db";
 import { DEMO_SKYDO_SECRET, DEMO_STRIPE_SECRET } from "@/lib/owner-access";
@@ -77,21 +92,9 @@ function cleanLink(value: string) {
 
 function cleanImage(value: string) {
   const image = value.trim();
-  if (!image) return "";
-  if (image.startsWith("data:image/")) {
-    if (!/^data:image\/(png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(image) || image.length > 180_000) {
-      throw new Error("Use a PNG, JPEG, WEBP, or GIF under 120 KB.");
-    }
-    return image;
-  }
-  let url: URL;
-  try {
-    url = new URL(image);
-  } catch {
-    throw new Error("Image must be an https link or a small upload.");
-  }
-  if (url.protocol !== "https:") throw new Error("Image links must use https.");
-  return url.toString();
+  const problem = imageFileError(image);
+  if (problem) throw new Error(problem);
+  return image;
 }
 
 function cleanVideo(value: string) {
@@ -114,9 +117,16 @@ function cleanDraft(input: CampaignDraft): CampaignDraft {
   }
   if (!isAudience(input.audience)) throw new Error("Choose an audience.");
   if (input.delivery !== "now" && input.delivery !== "later") throw new Error("Choose when to send.");
+  if (!isFrequency(input.frequency)) throw new Error("Choose a frequency.");
+  if (!isGoalMetric(input.goalMetric)) throw new Error("Choose a goal.");
   const ttlHours = Math.round(Number(input.ttlHours));
   const delaySeconds = Math.round(Number(input.delaySeconds));
-  if (!Number.isFinite(ttlHours) || !Number.isFinite(delaySeconds)) throw new Error("Check the delivery window.");
+  const frequencyCap = Math.round(Number(input.frequencyCap));
+  if (!Number.isFinite(ttlHours) || !Number.isFinite(delaySeconds) || !Number.isFinite(frequencyCap)) {
+    throw new Error("Check the delivery window.");
+  }
+  const scheduleAt = cleanInstant(input.scheduleAt, "Start");
+  const endsAt = cleanInstant(input.endsAt, "End");
   return {
     channel: input.channel,
     qualification: input.qualification,
@@ -128,12 +138,39 @@ function cleanDraft(input: CampaignDraft): CampaignDraft {
     image: cleanImage(input.image ?? ""),
     video: cleanVideo(input.video ?? ""),
     button: (input.button ?? "").trim().slice(0, 24),
+    ctaLink: cleanLink(input.ctaLink ?? ""),
     delivery: input.delivery,
+    scheduleAt,
+    endsAt,
     ttlHours,
     delaySeconds,
     quietHours: Boolean(input.quietHours),
-    goal: (input.goal ?? "").trim().slice(0, 80),
+    frequency: input.frequency,
+    frequencyCap,
+    goal: goalLabel(input.goalMetric),
+    goalMetric: input.goalMetric,
+    attributes: cleanAttributes(input.attributes),
   };
+}
+
+function cleanAttributes(value: BehaviorAttribute[] | undefined) {
+  if (!value || value.length === 0) return [];
+  const next: BehaviorAttribute[] = [];
+  for (const item of value) {
+    if (!isBehaviorAttribute(item)) throw new Error("That behavior attribute is not recognized.");
+    if (!next.includes(item)) next.push(item);
+  }
+  const problem = attributeError(next);
+  if (problem) throw new Error(problem);
+  return next;
+}
+
+function cleanInstant(value: string, label: string) {
+  const raw = (value ?? "").trim();
+  if (!raw) return "";
+  const date = parseInstant(raw);
+  if (!date) throw new Error(`${label} is not a valid date.`);
+  return date.toISOString();
 }
 
 function campaignProcess(raw: string) {
@@ -143,7 +180,16 @@ function campaignProcess(raw: string) {
     channel: parsed.channel,
     layout: parsed.layout,
     deliveryState: parsed.state,
+    qualification: parsed.qualification,
     button: parsed.button,
+    ctaLink: parsed.ctaLink,
+    scheduleAt: parsed.scheduleAt,
+    endsAt: parsed.endsAt,
+    frequency: parsed.frequency,
+    frequencyCap: parsed.frequencyCap,
+    goalMetric: parsed.goalMetric,
+    goalHits: parsed.goalHits,
+    attributes: parsed.attributes,
   };
 }
 
@@ -213,10 +259,10 @@ async function createBusiness(
   `;
   for (const device of seedSubscribers()) {
     await sql`
-      insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen)
+      insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen, behavior)
       values (
         ${crypto.randomUUID()}, ${id}, ${device.name}, ${device.userId}, ${device.platform},
-        ${device.city}, ${device.tag}, ${device.status}, ${device.lastSeen}
+        ${device.city}, ${device.tag}, ${device.status}, ${device.lastSeen}, ${JSON.stringify(device.behavior)}
       )
     `;
   }
@@ -270,6 +316,38 @@ async function claimPending(sql: Sql, userId: string, email: string) {
   }
 }
 
+async function ensureSegments(sql: Sql, businessId: string) {
+  const existing = await sql<{ id: string }>`select id from segments where business_id = ${businessId} limit 1`;
+  if (existing.length > 0) return;
+  for (const starter of starterSegments()) {
+    await sql`
+      insert into segments (id, business_id, name, rules)
+      values (${crypto.randomUUID()}, ${businessId}, ${starter.name}, ${JSON.stringify(starter.rules)})
+    `;
+  }
+}
+
+async function loadSegments(sql: Sql, businessId: string): Promise<SavedSegment[]> {
+  const rows = await sql<{ id: string; name: string; rules: string; updated_at: unknown }>`
+    select id, name, rules, updated_at from segments where business_id = ${businessId} order by name
+  `;
+  return rows.flatMap((row) => {
+    const rules = readRules(row.rules);
+    if (rules.length === 0) return [];
+    return [{ id: row.id, name: row.name, rules, updatedAt: iso(row.updated_at) }];
+  });
+}
+
+function readRules(raw: string): SegmentRule[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed.every(isSegmentRule)) return [];
+    return parsed;
+  } catch {
+    return [];
+  }
+}
+
 async function slice(sql: Sql, businessId: string): Promise<BusinessSlice | null> {
   const businesses = await sql<{
     id: string;
@@ -292,6 +370,7 @@ async function slice(sql: Sql, businessId: string): Promise<BusinessSlice | null
   `;
   const business = businesses[0];
   if (!business || !isPlan(business.plan)) return null;
+  await ensureSegments(sql, businessId);
   const deviceRows = await sql<{
     id: string;
     name: string;
@@ -302,8 +381,9 @@ async function slice(sql: Sql, businessId: string): Promise<BusinessSlice | null
     status: string;
     last_seen: unknown;
     push_token: string;
+    behavior: string;
   }>`
-    select id, name, external_user_id, platform, city, tag, status, last_seen, push_token
+    select id, name, external_user_id, platform, city, tag, status, last_seen, push_token, behavior
     from subscribers where business_id = ${businessId}
     order by last_seen desc
   `;
@@ -339,6 +419,7 @@ async function slice(sql: Sql, businessId: string): Promise<BusinessSlice | null
     status: row.status === "unregistered" ? "unregistered" : "active",
     lastSeen: iso(row.last_seen),
     pushToken: row.push_token,
+    behavior: parseBehavior(row.behavior, row.status === "unregistered" ? "unregistered" : "active", row.external_user_id),
   }));
   const campaigns: Campaign[] = campaignRows.map((row) => {
     let audience: Audience = { kind: "all" };
@@ -421,6 +502,7 @@ async function slice(sql: Sql, businessId: string): Promise<BusinessSlice | null
     reach: asReach(business.reach),
     subscribers,
     campaigns,
+    segments: await loadSegments(sql, businessId),
     grants,
     connections,
     kind,
@@ -683,7 +765,9 @@ export const sendPush = createServerFn({ method: "POST" })
         tag: device.tag,
         status: device.status,
         pushToken: device.pushToken,
+        behavior: device.behavior,
       })),
+      segments: current.segments,
       plan: current.plan,
     });
     if (reviewed.error) throw new Error(reviewed.error);
@@ -707,7 +791,15 @@ export const sendPush = createServerFn({ method: "POST" })
       delaySeconds: data.delaySeconds,
       quietHours: data.quietHours,
       button: data.button,
+      ctaLink: data.ctaLink,
+      scheduleAt: data.scheduleAt,
+      endsAt: data.endsAt,
+      frequency: data.frequency,
+      frequencyCap: data.frequencyCap,
       goal: data.goal,
+      goalMetric: data.goalMetric,
+      goalHits: reviewed.goalHits,
+      attributes: data.attributes,
       state: reviewed.state,
     });
     await sql`
@@ -720,6 +812,37 @@ export const sendPush = createServerFn({ method: "POST" })
         ${reviewed.stats.failed}, ${reviewed.stats.clicked}, false, ${process}
       )
     `;
+    return accountFor(sql, context.userId);
+  });
+
+export const saveSegment = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: SegmentDraft) => {
+    const problem = segmentError(input ?? { name: "", rules: [] });
+    if (problem) throw new Error(problem);
+    return { id: (input.id ?? "").trim(), name: input.name.trim(), rules: input.rules };
+  })
+  .handler(async ({ context, data }) => {
+    const sql = await getSql();
+    const member = await requireRight(sql, context.userId, "send");
+    const current = await slice(sql, member.businessId);
+    if (!current) throw new Error("Workspace missing.");
+    const taken = current.segments.some((item) => item.name.toLowerCase() === data.name.toLowerCase() && item.id !== data.id);
+    if (taken) throw new Error("A segment already uses that name.");
+    const rules = JSON.stringify(data.rules);
+    if (data.id) {
+      if (!current.segments.some((item) => item.id === data.id)) throw new Error("That segment is not on this workspace.");
+      await sql`
+        update segments set name = ${data.name}, rules = ${rules}, updated_at = ${new Date().toISOString()}
+        where id = ${data.id} and business_id = ${current.id}
+      `;
+    } else {
+      if (current.segments.length >= 20) throw new Error("A workspace can keep 20 segments.");
+      await sql`
+        insert into segments (id, business_id, name, rules)
+        values (${crypto.randomUUID()}, ${current.id}, ${data.name}, ${rules})
+      `;
+    }
     return accountFor(sql, context.userId);
   });
 
@@ -744,8 +867,8 @@ export const addDevice = createServerFn({ method: "POST" })
     const reach = cloneReach(current.reach);
     reach[data.platform][data.tag] += 1;
     await sql`
-      insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen)
-      values (${crypto.randomUUID()}, ${current.id}, ${data.name}, ${data.userId}, ${data.platform}, ${data.city}, ${data.tag}, 'active', ${new Date().toISOString()})
+      insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen, behavior)
+      values (${crypto.randomUUID()}, ${current.id}, ${data.name}, ${data.userId}, ${data.platform}, ${data.city}, ${data.tag}, 'active', ${new Date().toISOString()}, ${JSON.stringify(connectedBehavior())})
     `;
     await sql`
       update businesses set mau = ${current.mau + 1}, reach = ${JSON.stringify(reach)} where id = ${current.id}
@@ -770,7 +893,7 @@ export const dropDevice = createServerFn({ method: "POST" })
     const reach = cloneReach(current.reach);
     reach[device.platform][device.tag] = Math.max(0, reach[device.platform][device.tag] - 1);
     await sql`
-      update subscribers set status = 'unregistered'
+      update subscribers set status = 'unregistered', behavior = ${JSON.stringify({ ...device.behavior, permission: "denied" })}
       where id = ${id} and business_id = ${current.id}
     `;
     await sql`
@@ -798,10 +921,10 @@ export const resetWorkspace = createServerFn({ method: "POST" })
     await sql`delete from campaigns where business_id = ${member.businessId}`;
     for (const device of seedSubscribers()) {
       await sql`
-        insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen)
+        insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen, behavior)
         values (
           ${crypto.randomUUID()}, ${member.businessId}, ${device.name}, ${device.userId}, ${device.platform},
-          ${device.city}, ${device.tag}, ${device.status}, ${device.lastSeen}
+          ${device.city}, ${device.tag}, ${device.status}, ${device.lastSeen}, ${JSON.stringify(device.behavior)}
         )
       `;
     }
@@ -1077,16 +1200,20 @@ export const removeConnection = createServerFn({ method: "POST" })
 
 export const runTest = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { connectionId: string; title: string; body: string; link: string }) => {
+  .validator((input: { connectionId: string; title: string; body: string; link: string; button?: string; ctaLink?: string }) => {
     const connectionId = (input?.connectionId ?? "").trim();
     const title = (input?.title ?? "").trim();
     const body = (input?.body ?? "").trim();
     const link = (input?.link ?? "").trim();
+    const button = (input?.button ?? "").trim().slice(0, 24);
+    const ctaLink = (input?.ctaLink ?? "").trim();
     if (!connectionId) throw new Error("Choose a connection.");
     if (!title || title.length > 65) throw new Error("Title is required, up to 65 characters.");
     if (!body || body.length > 180) throw new Error("Message is required, up to 180 characters.");
     if (link.length > 500 || /^(javascript|data|vbscript):/i.test(link)) throw new Error("That deep link is not allowed.");
-    return { connectionId, title, body, link };
+    if (ctaLink.length > 500 || /^(javascript|data|vbscript):/i.test(ctaLink)) throw new Error("That deep link is not allowed.");
+    if (button && !ctaLink && !link) throw new Error("The button needs a deep link.");
+    return { connectionId, title, body, link, button, ctaLink };
   })
   .handler(async ({ context, data }) => {
     const sql = await getSql();
@@ -1101,13 +1228,30 @@ export const runTest = createServerFn({ method: "POST" })
       connection.target === "web"
         ? { kind: "all" as const }
         : { kind: "platform" as const, platform: connection.target };
+    const process = JSON.stringify({
+      channel: "push",
+      qualification: "past",
+      layout: "lock",
+      delivery: "now",
+      ttlHours: 1,
+      delaySeconds: 0,
+      quietHours: false,
+      button: data.button,
+      ctaLink: data.ctaLink,
+      scheduleAt: "",
+      endsAt: "",
+      frequency: "once",
+      frequencyCap: 1,
+      goal: "Test",
+      state: "sent",
+    });
     await sql`
       insert into campaigns (
         id, business_id, title, body, link, image_url, video_url, audience,
-        targeted, delivered, failed, clicked, seed, is_test, test_label
+        targeted, delivered, failed, clicked, seed, is_test, test_label, process
       ) values (
         ${crypto.randomUUID()}, ${current.id}, ${data.title}, ${data.body}, ${data.link}, '', '',
-        ${JSON.stringify(audience)}, 1, 1, 0, 0, false, true, ${`${targetLabel} · ${connection.name}`}
+        ${JSON.stringify(audience)}, 1, 1, 0, 0, false, true, ${`${targetLabel} · ${connection.name}`}, ${process}
       )
     `;
     return accountFor(sql, context.userId);
@@ -1219,10 +1363,10 @@ export const connectToken = createServerFn({ method: "POST" })
     reach[data.platform].orders += 1;
     const userId = `tok_${data.token.slice(-8).toLowerCase()}`;
     await sql`
-      insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen, push_token)
+      insert into subscribers (id, business_id, name, external_user_id, platform, city, tag, status, last_seen, push_token, behavior)
       values (
         ${crypto.randomUUID()}, ${current.id}, ${data.name}, ${userId}, ${data.platform},
-        'Connected', 'orders', 'active', ${new Date().toISOString()}, ${data.token}
+        'Connected', 'orders', 'active', ${new Date().toISOString()}, ${data.token}, ${JSON.stringify(connectedBehavior())}
       )
     `;
     await sql`

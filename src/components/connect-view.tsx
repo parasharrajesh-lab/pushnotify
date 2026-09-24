@@ -36,6 +36,8 @@ export function ConnectView() {
   const [title, setTitle] = useState("Test from Nock");
   const [body, setBody] = useState("This is a sandbox delivery to the connected app.");
   const [link, setLink] = useState("metrobites://test");
+  const [button, setButton] = useState("Open");
+  const [ctaLink, setCtaLink] = useState("");
   const [tokenPlatform, setTokenPlatform] = useState<"android" | "ios">("android");
   const [tokenName, setTokenName] = useState("");
   const [token, setToken] = useState("");
@@ -223,7 +225,7 @@ export function ConnectView() {
             event.preventDefault();
             if (!chosen) return;
             void (async () => {
-              const error = await testRun({ connectionId: chosen.id, title, body, link });
+              const error = await testRun({ connectionId: chosen.id, title, body, link, button, ctaLink });
               if (error) toast.error(error);
               else toast.success(`Test recorded for ${chosen.name}.`);
             })();
@@ -259,6 +261,14 @@ export function ConnectView() {
           <label className="flex flex-col gap-1 text-sm font-medium">
             Deep link
             <Input value={link} onChange={(e) => setLink(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Button
+            <Input value={button} maxLength={24} onChange={(e) => setButton(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Button deep link
+            <Input value={ctaLink} onChange={(e) => setCtaLink(e.target.value)} placeholder="Leave empty to use the message deep link" />
           </label>
           {!grants.test ? <p className="text-sm text-muted-foreground">The system admin has not granted test runs yet.</p> : null}
           <Button type="submit" disabled={!grants.test || connections.length === 0}>

@@ -15,6 +15,7 @@ import {
   resetWorkspace,
   runTest,
   sendPush,
+  saveSegment,
   setBusinessGrants,
   setBusinessPlan,
   setCapPreview,
@@ -40,6 +41,7 @@ import {
 } from "@/lib/account-types";
 import { BASE_REACH, mauCap, type Campaign, type Platform, type Reach, type Subscriber, type Tag } from "@/lib/push";
 import type { CampaignDraft } from "@/lib/notify";
+import type { SavedSegment, SegmentDraft } from "@/lib/behavior";
 import type { BillingMode, BillingState, WebhookSecrets, WorkspaceKind } from "@/lib/account-types";
 
 type PushState = {
@@ -61,6 +63,7 @@ type PushState = {
   mau: number;
   reach: Reach;
   subscribers: Subscriber[];
+  segments: SavedSegment[];
   campaigns: Campaign[];
   overCap: boolean;
   grants: Grants;
@@ -74,6 +77,7 @@ type PushState = {
   webhookSecrets: WebhookSecrets;
   load: () => Promise<void>;
   send: (input: CampaignDraft) => Promise<string | null>;
+  saveSegment: (input: SegmentDraft) => Promise<string | null>;
   addDevice: (input: { name: string; userId: string; platform: Platform; city: string; tag: Tag }) => Promise<string | null>;
   unregister: (id: string) => Promise<string | null>;
   setOverCap: (on: boolean) => Promise<string | null>;
@@ -88,7 +92,7 @@ type PushState = {
   setGrants: (input: { id: string; sdk: boolean; webhook: boolean; test: boolean }) => Promise<string | null>;
   addLink: (input: { kind: ConnectKind; target: ConnectTarget; name: string; endpoint: string }) => Promise<string | null>;
   removeLink: (id: string) => Promise<string | null>;
-  testRun: (input: { connectionId: string; title: string; body: string; link: string }) => Promise<string | null>;
+  testRun: (input: { connectionId: string; title: string; body: string; link: string; button?: string; ctaLink?: string }) => Promise<string | null>;
   registerEnterprise: (input: { businessName: string; contact: string; email: string; plan: PlanId }) => Promise<string | null>;
   acceptTerms: () => Promise<string | null>;
   issueBill: (id: string) => Promise<string | null>;
@@ -116,6 +120,7 @@ function fromAccount(account: AccountPayload) {
     mau: business?.mau ?? 0,
     reach: business?.reach ?? structuredClone(BASE_REACH),
     subscribers: business?.subscribers ?? [],
+    segments: business?.segments ?? [],
     campaigns: business?.campaigns ?? [],
     overCap: business?.overCap ?? false,
     grants: business?.grants ?? EMPTY_GRANTS,
@@ -158,6 +163,7 @@ export const usePush = create<PushState>((set) => ({
   mau: 0,
   reach: structuredClone(BASE_REACH),
   subscribers: [],
+  segments: [],
   campaigns: [],
   overCap: false,
   grants: EMPTY_GRANTS,
@@ -177,6 +183,7 @@ export const usePush = create<PushState>((set) => ({
     }
   },
   send: (input) => apply(() => sendPush({ data: input })),
+  saveSegment: (input) => apply(() => saveSegment({ data: input })),
   addDevice: (input) => apply(() => addDeviceFn({ data: input })),
   unregister: (id) => apply(() => dropDevice({ data: id })),
   setOverCap: (on) => apply(() => setCapPreview({ data: on })),

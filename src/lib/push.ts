@@ -1,3 +1,5 @@
+import { seedBehavior, type Behavior } from "./behavior.ts";
+
 export const MAU_CAP = 10_000;
 export const APP_NAME = "Metro Bites";
 
@@ -8,7 +10,8 @@ export type Platform = "android" | "ios";
 export type Audience =
   | { kind: "all" }
   | { kind: "platform"; platform: Platform }
-  | { kind: "tag"; tag: Tag };
+  | { kind: "tag"; tag: Tag }
+  | { kind: "segment"; segmentId: string };
 
 export type Subscriber = {
   id: string;
@@ -20,6 +23,7 @@ export type Subscriber = {
   lastSeen: string;
   status: "active" | "unregistered";
   pushToken?: string;
+  behavior: Behavior;
 };
 
 export type Campaign = {
@@ -41,7 +45,16 @@ export type Campaign = {
   channel?: "push" | "inapp";
   layout?: "lock" | "banner" | "modal" | "primer";
   deliveryState?: "sent" | "queued" | "scheduled" | "armed";
+  qualification?: "past" | "live" | "external";
   button?: string;
+  ctaLink?: string;
+  scheduleAt?: string;
+  endsAt?: string;
+  frequency?: "once" | "session" | "daily" | "weekly";
+  frequencyCap?: number;
+  goalMetric?: "opened" | "returned_next_day" | "sessions" | "purchases";
+  goalHits?: number;
+  attributes?: string[];
 };
 
 export type Reach = Record<Platform, Record<Tag, number>>;
@@ -82,10 +95,12 @@ export function tagLabel(tag: Tag) {
 export function audienceLabel(audience: Audience) {
   if (audience.kind === "all") return "All devices";
   if (audience.kind === "platform") return audience.platform === "android" ? "Android" : "iOS";
+  if (audience.kind === "segment") return "Segment";
   return TAG_LABEL[audience.tag];
 }
 
 export function audienceSize(reach: Reach, audience: Audience) {
+  if (audience.kind === "segment") return 0;
   const platforms: Platform[] = audience.kind === "platform" ? [audience.platform] : ["android", "ios"];
   const tags: Tag[] = audience.kind === "tag" ? [audience.tag] : [...TAGS];
   let total = 0;
@@ -123,7 +138,7 @@ function daysAgo(days: number, hour = 11) {
 }
 
 export function seedSubscribers(): Subscriber[] {
-  return [
+  const rows: Omit<Subscriber, "behavior">[] = [
     { id: "d1", name: "Aisha Khan", userId: "usr_19f2", platform: "android", city: "Mumbai", tag: "orders", lastSeen: hoursAgo(1), status: "active" },
     { id: "d2", name: "Rohan Mehta", userId: "usr_20aa", platform: "ios", city: "Mumbai", tag: "vip", lastSeen: hoursAgo(3), status: "active" },
     { id: "d3", name: "Neha Iyer", userId: "usr_18c0", platform: "android", city: "Pune", tag: "lapsing", lastSeen: hoursAgo(26), status: "active" },
@@ -137,6 +152,18 @@ export function seedSubscribers(): Subscriber[] {
     { id: "d11", name: "Tara Joshi", userId: "usr_19aa", platform: "ios", city: "Pune", tag: "orders", lastSeen: hoursAgo(9), status: "active" },
     { id: "d12", name: "Dev Patel", userId: "usr_25b1", platform: "android", city: "Mumbai", tag: "new", lastSeen: hoursAgo(4), status: "active" },
   ];
+  return rows.map((row) => ({
+    ...row,
+    behavior: seedBehavior(row.userId) ?? {
+      permission: row.status === "unregistered" ? "not_asked" : "allowed",
+      opened: 0,
+      dismissed: 0,
+      sessions: 0,
+      purchases: 0,
+      daysSinceOpen: row.status === "unregistered" ? null : 0,
+      returnedNextDay: false,
+    },
+  }));
 }
 
 export function seedCampaigns(): Campaign[] {
@@ -220,5 +247,6 @@ export function isAudience(value: unknown): value is Audience {
   if (v.kind === "all") return true;
   if (v.kind === "platform") return v.platform === "android" || v.platform === "ios";
   if (v.kind === "tag") return (TAGS as readonly string[]).includes(v.tag);
+  if (v.kind === "segment") return typeof v.segmentId === "string" && v.segmentId.trim().length > 0 && v.segmentId.length <= 80;
   return false;
 }

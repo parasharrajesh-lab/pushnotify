@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { behaviorSummary, defaultBehavior } from "@/lib/behavior";
 import { TAGS, tagLabel, type Platform, type Tag } from "@/lib/push";
 import { usePush } from "@/lib/push-store";
 import { cn, formatWhen } from "@/lib/utils";
@@ -155,6 +156,7 @@ export function DevicesView() {
               <div className="flex flex-wrap items-center gap-2 pt-3 text-xs text-muted-foreground">
                 <span className="rounded-sm bg-muted px-2 py-1">{device.platform === "android" ? "Android" : "iOS"}</span>
                 <span className="rounded-sm bg-muted px-2 py-1">{tagLabel(device.tag)}</span>
+                <span>{behaviorSummary(device.behavior ?? defaultBehavior(device.status))}</span>
                 <span className="tabular-nums">{formatWhen(device.lastSeen)}</span>
                 {device.status === "active" && canEdit ? (
                   <button

@@ -1,13 +1,13 @@
 import { o as __toESM } from "../_runtime.mjs";
 import { t as __exportAll } from "./rolldown-runtime-D7D4PA-g.mjs";
 import { B as require_react, _ as createRootRoute, b as require_jsx_runtime, d as HeadContent, g as createFileRoute, h as lazyRouteComponent, m as Outlet, p as createRouter, u as Scripts, y as useRouter } from "../_libs/@tanstack/react-router+[...].mjs";
-import { h as isPlan, n as DEMO_STRIPE_SECRET, p as getSql, t as DEMO_SKYDO_SECRET, v as periodLabel } from "./owner-access-gxEwVfLU.mjs";
+import { h as isPlan, n as DEMO_STRIPE_SECRET, p as getSql, t as DEMO_SKYDO_SECRET, v as periodLabel } from "./owner-access-D4e8lj_h.mjs";
 import { L as string, N as number, P as object, R as union, j as literal } from "../_libs/@better-auth/core+[...].mjs";
-import { n as auth, o as hashPassword$1 } from "./server-BZSG3nVm.mjs";
-import { n as seedSystemOwner } from "./owner-seed.server-tJGOL_w_.mjs";
+import { n as auth, o as hashPassword$1 } from "./server-BWUAkxHl.mjs";
+import { n as seedSystemOwner } from "./owner-seed.server-DTlt52Vb.mjs";
 import { t as TriangleAlert } from "../_libs/lucide-react.mjs";
 import { createHmac, randomBytes } from "node:crypto";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-DNVdmBef.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-fIxzlrKE.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var FALLBACK_MESSAGE = "An unexpected error occurred. Try reloading the page.";
@@ -301,7 +301,7 @@ function PreviewHostBridge() {
 	}, [router]);
 	return null;
 }
-var styles_default = "/assets/styles-CzoeaOgA.css";
+var styles_default = "/assets/styles-pqfepvkc.css";
 var APP_NAME = "Nock";
 var Route$10 = createRootRoute({
 	head: () => ({
@@ -364,11 +364,11 @@ var Route$10 = createRootRoute({
 		] })]
 	})
 });
-var $$splitComponentImporter$2 = () => import("./routes-C_ERKh0G.mjs");
+var $$splitComponentImporter$2 = () => import("./routes-CMIFK_bW.mjs");
 var Route$9 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter$2, "component") });
-var $$splitComponentImporter$1 = () => import("./admin-zk4-eMr0.mjs");
+var $$splitComponentImporter$1 = () => import("./admin-DsfkxAMB.mjs");
 var Route$8 = createFileRoute("/admin")({ component: lazyRouteComponent($$splitComponentImporter$1, "component") });
-var $$splitComponentImporter = () => import("./login-BN_SO1fS.mjs");
+var $$splitComponentImporter = () => import("./login-HEelPtrj.mjs");
 var Route$7 = createFileRoute("/login")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 var Route$6 = createFileRoute("/api/owner-ready")({ server: { handlers: { POST: async () => {
 	await seedSystemOwner();
@@ -870,7 +870,7 @@ async function writeWebhookSettings(input) {
   `;
 }
 async function ownerId$1(request) {
-	const { auth } = await import("./server-BZSG3nVm.mjs").then((n) => n.s).then((n) => n.r);
+	const { auth } = await import("./server-BWUAkxHl.mjs").then((n) => n.s).then((n) => n.r);
 	const userId = (await auth.api.getSession({ headers: request.headers }))?.user?.id;
 	if (!userId) return null;
 	return (await (await getSql())`select user_id from platform_admins where user_id = ${userId} limit 1`)[0] ? userId : null;
@@ -893,7 +893,7 @@ var Route$3 = createFileRoute("/api/webhooks/replay")({ server: { handlers: { PO
 	return Response.json(result);
 } } } });
 async function ownerId(request) {
-	const { auth } = await import("./server-BZSG3nVm.mjs").then((n) => n.s).then((n) => n.r);
+	const { auth } = await import("./server-BWUAkxHl.mjs").then((n) => n.s).then((n) => n.r);
 	const userId = (await auth.api.getSession({ headers: request.headers }))?.user?.id;
 	if (!userId) return null;
 	return (await (await getSql())`select user_id from platform_admins where user_id = ${userId} limit 1`)[0] ? userId : null;

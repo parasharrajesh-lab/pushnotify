@@ -7,6 +7,7 @@ import { DevicesView } from "@/components/devices-view";
 import { EnterpriseOnboard } from "@/components/enterprise-onboard";
 import { OnboardView } from "@/components/onboard-view";
 import { PlanView } from "@/components/plan-view";
+import { SegmentsView } from "@/components/segments-view";
 import { SendView } from "@/components/send-view";
 import { SystemView } from "@/components/system-view";
 import { TeamView } from "@/components/team-view";
@@ -17,6 +18,7 @@ import { cn, formatCount } from "@/lib/utils";
 
 const NAV = [
   { id: "send", label: "Campaigns", right: "send" },
+  { id: "segments", label: "Segments", right: "send" },
   { id: "devices", label: "Devices", right: "devices" },
   { id: "activity", label: "Activity", right: "activity" },
   { id: "plan", label: "Plan", right: "plan" },
@@ -121,6 +123,7 @@ export function Shell() {
           {ready && !loadError && !businessId && view !== "system" ? <OnboardView /> : null}
           {ready && !loadError && businessId && kind === "enterprise" && !onboarded ? <EnterpriseOnboard /> : null}
           {ready && !loadError && businessId && onboarded && view === "send" ? <SendView /> : null}
+          {ready && !loadError && businessId && onboarded && view === "segments" ? <SegmentsView /> : null}
           {ready && !loadError && businessId && onboarded && view === "devices" ? <DevicesView /> : null}
           {ready && !loadError && businessId && onboarded && view === "activity" ? <ActivityView /> : null}
           {ready && !loadError && businessId && onboarded && view === "plan" ? <PlanView /> : null}

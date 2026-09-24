@@ -1,4 +1,5 @@
 import type { Campaign, Reach, Subscriber } from "@/lib/push";
+import type { SavedSegment } from "@/lib/behavior";
 
 export const ROLES = ["owner", "developer", "marketer", "analyst", "viewer"] as const;
 export type Role = (typeof ROLES)[number];
@@ -140,6 +141,7 @@ export type BusinessSlice = {
   reach: Reach;
   subscribers: Subscriber[];
   campaigns: Campaign[];
+  segments: SavedSegment[];
   grants: Grants;
   connections: ConnectionRow[];
   kind: WorkspaceKind;

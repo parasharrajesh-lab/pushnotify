@@ -1,12 +1,12 @@
 import { o as __toESM } from "../_runtime.mjs";
 import { B as require_react, b as require_jsx_runtime, v as Navigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { a as RIGHTS, r as EMPTY_GRANTS } from "./owner-access-gxEwVfLU.mjs";
-import { p as mauCap, t as BASE_REACH } from "./middleware-fDVXmQad.mjs";
-import { C as setBusinessPlan, D as updateBrand, E as setOwnPlan, S as setBusinessGrants, T as setMemberRole, _ as removeConnection, a as addConnection, b as runTest, g as registerEnterprise, h as loadAccount, i as addBusinessUser, l as connectToken, m as issueInvoice, o as addDevice, p as inviteMember, r as acceptEnterprise, u as dropDevice, v as removeMember, w as setCapPreview, x as sendPush, y as resetWorkspace } from "./account-fns-7GP3bSk7.mjs";
+import { a as RIGHTS, r as EMPTY_GRANTS } from "./owner-access-D4e8lj_h.mjs";
+import { R as mauCap, n as BASE_REACH } from "./middleware-qnVsyvPC.mjs";
+import { C as setBusinessGrants, D as setOwnPlan, E as setMemberRole, O as updateBrand, S as sendPush, T as setCapPreview, _ as removeConnection, a as addConnection, b as runTest, g as registerEnterprise, h as loadAccount, i as addBusinessUser, l as connectToken, m as issueInvoice, o as addDevice, p as inviteMember, r as acceptEnterprise, u as dropDevice, v as removeMember, w as setBusinessPlan, x as saveSegment, y as resetWorkspace } from "./account-fns-DfB75Ss1.mjs";
 import { i as signOut, t as authClient } from "./client-CVqXY6bk.mjs";
-import { a as hasGateSessionMarker } from "./server-BZSG3nVm.mjs";
+import { a as hasGateSessionMarker } from "./server-BWUAkxHl.mjs";
 import { t as create } from "../_libs/zustand.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/gates-CN0gzG2z.js
+//#region node_modules/.nitro/vite/services/ssr/assets/gates-BuKxug9q.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function fromAccount(account) {
@@ -30,6 +30,7 @@ function fromAccount(account) {
 		mau: business?.mau ?? 0,
 		reach: business?.reach ?? structuredClone(BASE_REACH),
 		subscribers: business?.subscribers ?? [],
+		segments: business?.segments ?? [],
 		campaigns: business?.campaigns ?? [],
 		overCap: business?.overCap ?? false,
 		grants: business?.grants ?? EMPTY_GRANTS,
@@ -70,6 +71,7 @@ var usePush = create((set) => ({
 	mau: 0,
 	reach: structuredClone(BASE_REACH),
 	subscribers: [],
+	segments: [],
 	campaigns: [],
 	overCap: false,
 	grants: EMPTY_GRANTS,
@@ -95,6 +97,7 @@ var usePush = create((set) => ({
 		}
 	},
 	send: (input) => apply(() => sendPush({ data: input })),
+	saveSegment: (input) => apply(() => saveSegment({ data: input })),
 	addDevice: (input) => apply(() => addDevice({ data: input })),
 	unregister: (id) => apply(() => dropDevice({ data: id })),
 	setOverCap: (on) => apply(() => setCapPreview({ data: on })),
