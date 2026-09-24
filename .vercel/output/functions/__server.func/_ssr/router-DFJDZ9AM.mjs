@@ -7,7 +7,7 @@ import { n as auth, o as hashPassword$1 } from "./server-CCpuExkQ.mjs";
 import { n as seedSystemOwner } from "./owner-seed.server-CljaPCh_.mjs";
 import { t as TriangleAlert } from "../_libs/lucide-react.mjs";
 import { createHmac, randomBytes } from "node:crypto";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-P4T5ekLZ.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-DFJDZ9AM.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var FALLBACK_MESSAGE = "An unexpected error occurred. Try reloading the page.";
@@ -368,7 +368,7 @@ var $$splitComponentImporter$2 = () => import("./routes-DqNsVXXJ.mjs");
 var Route$9 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter$2, "component") });
 var $$splitComponentImporter$1 = () => import("./admin-BH7omRHW.mjs");
 var Route$8 = createFileRoute("/admin")({ component: lazyRouteComponent($$splitComponentImporter$1, "component") });
-var $$splitComponentImporter = () => import("./login-DvecNBbQ.mjs");
+var $$splitComponentImporter = () => import("./login-pntpA6H0.mjs");
 var Route$7 = createFileRoute("/login")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 var Route$6 = createFileRoute("/api/owner-ready")({ server: { handlers: { POST: async () => {
 	await seedSystemOwner();
@@ -403,6 +403,30 @@ function hashesMatch(left, right) {
 	for (let i = 0; i < left.length; i += 1) diff |= left.charCodeAt(i) ^ right.charCodeAt(i);
 	return diff === 0;
 }
+function isAccountState(value) {
+	return value === "missing" || value === "owner" || value === "password" || value === "social";
+}
+/** Null means this email can set a new password. */
+function resetStartMessage(state) {
+	if (state === "missing") return "No account uses that email. Register a workspace.";
+	if (state === "owner") return "The system owner password is not changed on this page.";
+	return null;
+}
+function signInFailureMessage(state) {
+	if (state === "missing") return "No account uses that email. Register a workspace.";
+	if (state === "social") return "This email is registered with Google or X. Set a password with Forgot password, or continue with that provider.";
+	if (state === "owner") return "That password does not match. The system owner password is not changed on this page.";
+	return "That password does not match. Use Forgot password to set a new one.";
+}
+function signUpConflictMessage(state) {
+	if (state === "owner") return "That email is the system owner. Use System owner sign in.";
+	if (state === "social") return "That email is already registered with Google or X. Set a password with Forgot password, or continue with that provider.";
+	if (state === "missing") return "No account uses that email. Register a workspace.";
+	return "That email is already registered. The password does not match. Use Forgot password to set a new one.";
+}
+function isExistingAccountError(message) {
+	return /already exists/i.test(message);
+}
 var ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 var TTL_MS = 12e5;
 function resetCookie(code, maxAge) {
@@ -434,13 +458,38 @@ function newCode() {
 	for (let i = 0; i < bytes.length; i += 1) code += ALPHABET[bytes[i] % 32];
 	return code;
 }
+async function classify(email) {
+	const sql = await getSql();
+	const user = (await sql`select id from "user" where lower(email) = ${email} limit 1`)[0];
+	if (!user) return {
+		state: "missing",
+		userId: null
+	};
+	if ((await sql`select user_id from platform_admins where user_id = ${user.id} limit 1`)[0]) return {
+		state: "owner",
+		userId: user.id
+	};
+	if ((await sql`
+    select password from "account"
+    where "userId" = ${user.id} and "providerId" = 'credential'
+    limit 1
+  `)[0]?.password) return {
+		state: "password",
+		userId: user.id
+	};
+	return {
+		state: "social",
+		userId: user.id
+	};
+}
 async function handlePasswordReset(request) {
 	if (!sameOrigin(request)) return json({ error: "Forbidden" }, 403);
 	const body = await request.json().catch(() => null);
-	if (!body || body.action !== "start" && body.action !== "finish") return json({ error: "Unknown request." }, 400);
+	if (!body || body.action !== "start" && body.action !== "finish" && body.action !== "status") return json({ error: "Unknown request." }, 400);
 	const emailError = accountEmailError(typeof body.email === "string" ? body.email : "");
 	if (emailError) return json({ error: emailError }, 400);
 	const email = normalizeAccountEmail(String(body.email));
+	if (body.action === "status") return json({ state: (await classify(email)).state });
 	if (body.action === "start") return startReset(email);
 	return finishReset(request, email, body);
 }
@@ -450,14 +499,11 @@ async function startReset(email) {
     select count(*)::int as n from password_resets
     where email = ${email} and created_at > now() - interval '15 minutes'
   `)[0]?.n ?? 0) >= 5) return json({ error: "Wait a few minutes before requesting another reset." }, 429);
-	const user = (await sql`select id from "user" where lower(email) = ${email} limit 1`)[0];
-	if (!user) return json({ issued: false }, 200, resetCookie("", 0));
-	if ((await sql`select user_id from platform_admins where user_id = ${user.id} limit 1`)[0]) return json({ issued: false }, 200, resetCookie("", 0));
-	if (!(await sql`
-    select id from "account"
-    where "userId" = ${user.id} and "providerId" = 'credential' and password is not null
-    limit 1
-  `)[0]) return json({ issued: false }, 200, resetCookie("", 0));
+	const found = await classify(email);
+	if (!isAccountState(found.state) || found.state === "missing" || found.state === "owner" || !found.userId) return json({
+		issued: false,
+		reason: found.state === "owner" ? "owner" : "missing"
+	}, 200, resetCookie("", 0));
 	const code = newCode();
 	const codeHash = await hashResetCode(email, code);
 	const id = randomBytes(16).toString("hex");
@@ -465,9 +511,12 @@ async function startReset(email) {
 	await sql`update password_resets set used_at = now() where email = ${email} and used_at is null`;
 	await sql`
     insert into password_resets (id, user_id, email, code_hash, expires_at)
-    values (${id}, ${user.id}, ${email}, ${codeHash}, ${expires})
+    values (${id}, ${found.userId}, ${email}, ${codeHash}, ${expires})
   `;
-	return json({ issued: true }, 200, resetCookie(code, 1200));
+	return json({
+		issued: true,
+		reason: found.state
+	}, 200, resetCookie(code, 1200));
 }
 async function finishReset(request, email, body) {
 	const password = typeof body.password === "string" ? body.password : "";
@@ -495,11 +544,18 @@ async function finishReset(request, email, body) {
 		else await sql`update password_resets set attempts = ${attempts} where id = ${row.id}`;
 		return json({ error: "That reset is not valid. Request a new one." }, 400);
 	}
-	await sql`
+	const found = await classify(email);
+	if (found.state === "owner" || found.state === "missing" || found.userId !== row.user_id) return json({ error: "That reset is not valid. Request a new one." }, 400, resetCookie("", 0));
+	const hashed = await hashPassword$1(password);
+	if (!(await sql`
     update "account"
-    set password = ${await hashPassword$1(password)}, "updatedAt" = now()
+    set password = ${hashed}, "updatedAt" = now()
     where "userId" = ${row.user_id} and "providerId" = 'credential'
-  `;
+    returning id
+  `)[0]) await sql`
+      insert into "account" (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
+      values (${randomBytes(16).toString("hex")}, ${row.user_id}, 'credential', ${row.user_id}, ${hashed}, now(), now())
+    `;
 	await sql`update password_resets set used_at = now() where id = ${row.id}`;
 	await sql`delete from "session" where "userId" = ${row.user_id}`;
 	return json({ saved: true }, 200, resetCookie("", 0));
@@ -917,4 +973,4 @@ function getRouter() {
 	});
 }
 //#endregion
-export { accountEmailError as n, newPasswordError as r, router_exports as t };
+export { newPasswordError as a, signInFailureMessage as c, isExistingAccountError as i, signUpConflictMessage as l, accountEmailError as n, normalizeAccountEmail as o, isAccountState as r, resetStartMessage as s, router_exports as t };

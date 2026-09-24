@@ -4,7 +4,7 @@ import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
 import { completeRegistration } from "@/lib/account-fns";
 import { planLabel, type PlanId } from "@/lib/account-types";
 import { emailSignIn, emailSignUp } from "@/lib/email-session";
-import { accountEmailError, newPasswordError } from "@/lib/password-reset";
+import { accountEmailError, isAccountState, isExistingAccountError, newPasswordError, normalizeAccountEmail, resetStartMessage, signInFailureMessage, signUpConflictMessage, type AccountState } from "@/lib/password-reset";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -57,10 +57,22 @@ function Login() {
     setConfirm("");
   }
 
+  async function accountState(mail: string): Promise<AccountState> {
+    const response = await fetch("/api/password/reset", {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "status", email: mail }),
+    });
+    const body = (await response.json().catch(() => null)) as { state?: unknown } | null;
+    return isAccountState(body?.state) ? body.state : "missing";
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError("");
     setNotice("");
+    const mail = normalizeAccountEmail(email);
     if (mode !== "reset" && password.length < 8) {
       setError("Use at least 8 characters.");
       return;
@@ -69,7 +81,7 @@ function Login() {
     try {
       if (mode === "reset") {
         if (!resetReady) {
-          const emailError = accountEmailError(email);
+          const emailError = accountEmailError(mail);
           if (emailError) {
             setError(emailError);
             setBusy(false);
@@ -79,12 +91,12 @@ function Login() {
             method: "POST",
             credentials: "include",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ action: "start", email: email.trim() }),
+            body: JSON.stringify({ action: "start", email: mail }),
           });
-          const body = (await response.json().catch(() => null)) as { issued?: boolean; error?: string } | null;
+          const body = (await response.json().catch(() => null)) as { issued?: boolean; reason?: unknown; error?: string } | null;
           if (!response.ok) throw new Error(body?.error || "Could not start a reset.");
           if (!body?.issued) {
-            setError("No business password is on file for that email. Register a workspace, or sign in with Google or X.");
+            setError(resetStartMessage(body?.reason === "owner" ? "owner" : "missing") ?? "No account uses that email. Register a workspace.");
             setBusy(false);
             return;
           }
@@ -103,7 +115,7 @@ function Login() {
           method: "POST",
           credentials: "include",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "finish", email: email.trim(), password, confirm }),
+          body: JSON.stringify({ action: "finish", email: mail, password, confirm }),
         });
         const body = (await response.json().catch(() => null)) as { saved?: boolean; error?: string } | null;
         if (!response.ok || !body?.saved) throw new Error(body?.error || "Could not save the new password.");
@@ -121,10 +133,28 @@ function Login() {
           setBusy(false);
           return;
         }
-        await emailSignUp({ name: name.trim(), email: email.trim(), password });
+        try {
+          await emailSignUp({ name: name.trim(), email: mail, password });
+        } catch (caught) {
+          const message = caught instanceof Error ? caught.message : "";
+          if (!isExistingAccountError(message)) throw caught;
+          const state = await accountState(mail);
+          if (state !== "password") throw new Error(signUpConflictMessage(state));
+          try {
+            await emailSignIn({ email: mail, password });
+          } catch {
+            throw new Error(signUpConflictMessage("password"));
+          }
+        }
         await completeRegistration({ data: { businessName: businessName.trim(), plan } });
       } else {
-        await emailSignIn({ email: email.trim(), password });
+        try {
+          await emailSignIn({ email: mail, password });
+        } catch (caught) {
+          const message = caught instanceof Error ? caught.message : "";
+          if (!/invalid email or password/i.test(message)) throw caught;
+          throw new Error(signInFailureMessage(await accountState(mail)));
+        }
       }
       window.location.assign("/");
     } catch (caught) {

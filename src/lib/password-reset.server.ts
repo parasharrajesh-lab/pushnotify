@@ -1,7 +1,15 @@
 import { randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import { getSql } from "@/lib/db";
-import { accountEmailError, hashResetCode, hashesMatch, newPasswordError, normalizeAccountEmail } from "@/lib/password-reset";
+import {
+  accountEmailError,
+  hashResetCode,
+  hashesMatch,
+  isAccountState,
+  newPasswordError,
+  normalizeAccountEmail,
+  type AccountState,
+} from "@/lib/password-reset";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const TTL_MS = 20 * 60 * 1000;
@@ -40,13 +48,35 @@ function newCode() {
   return code;
 }
 
+async function classify(email: string): Promise<{ state: AccountState; userId: string | null }> {
+  const sql = await getSql();
+  const users = await sql<{ id: string }>`select id from "user" where lower(email) = ${email} limit 1`;
+  const user = users[0];
+  if (!user) return { state: "missing", userId: null };
+  const admins = await sql<{ user_id: string }>`select user_id from platform_admins where user_id = ${user.id} limit 1`;
+  if (admins[0]) return { state: "owner", userId: user.id };
+  const accounts = await sql<{ password: string | null }>`
+    select password from "account"
+    where "userId" = ${user.id} and "providerId" = 'credential'
+    limit 1
+  `;
+  if (accounts[0]?.password) return { state: "password", userId: user.id };
+  return { state: "social", userId: user.id };
+}
+
 export async function handlePasswordReset(request: Request) {
   if (!sameOrigin(request)) return json({ error: "Forbidden" }, 403);
   const body = (await request.json().catch(() => null)) as Body | null;
-  if (!body || (body.action !== "start" && body.action !== "finish")) return json({ error: "Unknown request." }, 400);
+  if (!body || (body.action !== "start" && body.action !== "finish" && body.action !== "status")) {
+    return json({ error: "Unknown request." }, 400);
+  }
   const emailError = accountEmailError(typeof body.email === "string" ? body.email : "");
   if (emailError) return json({ error: emailError }, 400);
   const email = normalizeAccountEmail(String(body.email));
+  if (body.action === "status") {
+    const found = await classify(email);
+    return json({ state: found.state });
+  }
   if (body.action === "start") return startReset(email);
   return finishReset(request, email, body);
 }
@@ -59,17 +89,10 @@ async function startReset(email: string) {
   `;
   if ((recent[0]?.n ?? 0) >= 5) return json({ error: "Wait a few minutes before requesting another reset." }, 429);
 
-  const users = await sql<{ id: string }>`select id from "user" where lower(email) = ${email} limit 1`;
-  const user = users[0];
-  if (!user) return json({ issued: false }, 200, resetCookie("", 0));
-  const admins = await sql<{ user_id: string }>`select user_id from platform_admins where user_id = ${user.id} limit 1`;
-  if (admins[0]) return json({ issued: false }, 200, resetCookie("", 0));
-  const accounts = await sql<{ id: string }>`
-    select id from "account"
-    where "userId" = ${user.id} and "providerId" = 'credential' and password is not null
-    limit 1
-  `;
-  if (!accounts[0]) return json({ issued: false }, 200, resetCookie("", 0));
+  const found = await classify(email);
+  if (!isAccountState(found.state) || found.state === "missing" || found.state === "owner" || !found.userId) {
+    return json({ issued: false, reason: found.state === "owner" ? "owner" : "missing" }, 200, resetCookie("", 0));
+  }
 
   const code = newCode();
   const codeHash = await hashResetCode(email, code);
@@ -78,9 +101,9 @@ async function startReset(email: string) {
   await sql`update password_resets set used_at = now() where email = ${email} and used_at is null`;
   await sql`
     insert into password_resets (id, user_id, email, code_hash, expires_at)
-    values (${id}, ${user.id}, ${email}, ${codeHash}, ${expires})
+    values (${id}, ${found.userId}, ${email}, ${codeHash}, ${expires})
   `;
-  return json({ issued: true }, 200, resetCookie(code, 20 * 60));
+  return json({ issued: true, reason: found.state }, 200, resetCookie(code, 20 * 60));
 }
 
 async function finishReset(request: Request, email: string, body: Body) {
@@ -114,12 +137,25 @@ async function finishReset(request: Request, email: string, body: Body) {
     return json({ error: "That reset is not valid. Request a new one." }, 400);
   }
 
+  const found = await classify(email);
+  if (found.state === "owner" || found.state === "missing" || found.userId !== row.user_id) {
+    return json({ error: "That reset is not valid. Request a new one." }, 400, resetCookie("", 0));
+  }
+
   const hashed = await hashPassword(password);
-  await sql`
+  const updated = await sql<{ id: string }>`
     update "account"
     set password = ${hashed}, "updatedAt" = now()
     where "userId" = ${row.user_id} and "providerId" = 'credential'
+    returning id
   `;
+  if (!updated[0]) {
+    const accountId = randomBytes(16).toString("hex");
+    await sql`
+      insert into "account" (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
+      values (${accountId}, ${row.user_id}, 'credential', ${row.user_id}, ${hashed}, now(), now())
+    `;
+  }
   await sql`update password_resets set used_at = now() where id = ${row.id}`;
   await sql`delete from "session" where "userId" = ${row.user_id}`;
   return json({ saved: true }, 200, resetCookie("", 0));

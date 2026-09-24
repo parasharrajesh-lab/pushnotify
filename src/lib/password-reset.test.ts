@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { accountEmailError, hashResetCode, hashesMatch, newPasswordError, normalizeAccountEmail } from "./password-reset.ts";
+import {
+  accountEmailError,
+  hashResetCode,
+  hashesMatch,
+  isExistingAccountError,
+  newPasswordError,
+  normalizeAccountEmail,
+  resetStartMessage,
+  signInFailureMessage,
+  signUpConflictMessage,
+} from "./password-reset.ts";
 
 test("email and password rules", () => {
   assert.equal(normalizeAccountEmail("  A@B.Co "), "a@b.co");
@@ -17,4 +27,24 @@ test("reset code hash is stable and compared in full", async () => {
   assert.equal(hashesMatch(hash, hash), true);
   assert.equal(hashesMatch(hash, hash.slice(0, -1) + (hash.endsWith("0") ? "1" : "0")), false);
   assert.equal(hashesMatch("abc", "ab"), false);
+});
+
+test("an existing email is never told to register, and a missing email is never told it exists", () => {
+  assert.equal(resetStartMessage("missing"), "No account uses that email. Register a workspace.");
+  assert.equal(resetStartMessage("password"), null);
+  assert.equal(resetStartMessage("social"), null);
+  assert.match(resetStartMessage("owner") ?? "", /system owner/i);
+  assert.doesNotMatch(resetStartMessage("owner") ?? "", /register a workspace/i);
+
+  assert.match(signInFailureMessage("missing"), /Register a workspace/);
+  assert.match(signInFailureMessage("password"), /Forgot password/);
+  assert.doesNotMatch(signInFailureMessage("password"), /No account/);
+  assert.match(signInFailureMessage("social"), /Forgot password/);
+
+  assert.match(signUpConflictMessage("password"), /already registered/);
+  assert.match(signUpConflictMessage("password"), /Forgot password/);
+  assert.doesNotMatch(signUpConflictMessage("password"), /another email/i);
+  assert.match(signUpConflictMessage("owner"), /System owner sign in/);
+  assert.equal(isExistingAccountError("User already exists. Use another email."), true);
+  assert.equal(isExistingAccountError("Invalid email or password"), false);
 });

@@ -5,8 +5,8 @@ import { c as completeRegistration, n as Input, s as cn, t as Button } from "./a
 import { r as signIn } from "./client-CVqXY6bk.mjs";
 import { t as GROK_PROVIDERS } from "./server-CCpuExkQ.mjs";
 import { n as emailSignUp, t as emailSignIn } from "./email-session-CMHsUb3L.mjs";
-import { n as accountEmailError, r as newPasswordError } from "./router-P4T5ekLZ.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/login-DvecNBbQ.js
+import { a as newPasswordError, c as signInFailureMessage, i as isExistingAccountError, l as signUpConflictMessage, n as accountEmailError, o as normalizeAccountEmail, r as isAccountState, s as resetStartMessage } from "./router-DFJDZ9AM.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/login-pntpA6H0.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var PLANS = [
@@ -64,10 +64,23 @@ function Login() {
 		setPassword("");
 		setConfirm("");
 	}
+	async function accountState(mail) {
+		const body = await (await fetch("/api/password/reset", {
+			method: "POST",
+			credentials: "include",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				action: "status",
+				email: mail
+			})
+		})).json().catch(() => null);
+		return isAccountState(body?.state) ? body.state : "missing";
+	}
 	async function onSubmit(event) {
 		event.preventDefault();
 		setError("");
 		setNotice("");
+		const mail = normalizeAccountEmail(email);
 		if (mode !== "reset" && password.length < 8) {
 			setError("Use at least 8 characters.");
 			return;
@@ -76,7 +89,7 @@ function Login() {
 		try {
 			if (mode === "reset") {
 				if (!resetReady) {
-					const emailError = accountEmailError(email);
+					const emailError = accountEmailError(mail);
 					if (emailError) {
 						setError(emailError);
 						setBusy(false);
@@ -88,13 +101,13 @@ function Login() {
 						headers: { "content-type": "application/json" },
 						body: JSON.stringify({
 							action: "start",
-							email: email.trim()
+							email: mail
 						})
 					});
 					const body = await response.json().catch(() => null);
 					if (!response.ok) throw new Error(body?.error || "Could not start a reset.");
 					if (!body?.issued) {
-						setError("No business password is on file for that email. Register a workspace, or sign in with Google or X.");
+						setError(resetStartMessage(body?.reason === "owner" ? "owner" : "missing") ?? "No account uses that email. Register a workspace.");
 						setBusy(false);
 						return;
 					}
@@ -115,7 +128,7 @@ function Login() {
 					headers: { "content-type": "application/json" },
 					body: JSON.stringify({
 						action: "finish",
-						email: email.trim(),
+						email: mail,
 						password,
 						confirm
 					})
@@ -136,19 +149,40 @@ function Login() {
 					setBusy(false);
 					return;
 				}
-				await emailSignUp({
-					name: name.trim(),
-					email: email.trim(),
-					password
-				});
+				try {
+					await emailSignUp({
+						name: name.trim(),
+						email: mail,
+						password
+					});
+				} catch (caught) {
+					const message = caught instanceof Error ? caught.message : "";
+					if (!isExistingAccountError(message)) throw caught;
+					const state = await accountState(mail);
+					if (state !== "password") throw new Error(signUpConflictMessage(state));
+					try {
+						await emailSignIn({
+							email: mail,
+							password
+						});
+					} catch {
+						throw new Error(signUpConflictMessage("password"));
+					}
+				}
 				await completeRegistration({ data: {
 					businessName: businessName.trim(),
 					plan
 				} });
-			} else await emailSignIn({
-				email: email.trim(),
-				password
-			});
+			} else try {
+				await emailSignIn({
+					email: mail,
+					password
+				});
+			} catch (caught) {
+				const message = caught instanceof Error ? caught.message : "";
+				if (!/invalid email or password/i.test(message)) throw caught;
+				throw new Error(signInFailureMessage(await accountState(mail)));
+			}
 			window.location.assign("/");
 		} catch (caught) {
 			setError(caught instanceof Error ? caught.message : "Could not sign in.");
