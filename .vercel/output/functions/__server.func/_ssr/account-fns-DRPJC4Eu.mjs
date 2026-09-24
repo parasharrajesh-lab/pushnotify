@@ -1,10 +1,10 @@
 import { b as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { a as getServerFnById, i as TSS_SERVER_FUNCTION, r as createServerFn } from "./ssr.mjs";
-import { g as isRole, h as isPlan, l as checkPushToken } from "./owner-access-D4e8lj_h.mjs";
-import { A as isFrequency, B as parseInstant, D as isAudience, E as imageFileError, K as segmentError, M as isLayout, N as isQualification, O as isBehaviorAttribute, j as isGoalMetric, k as isChannel, l as TAGS, p as authMiddleware, u as attributeError, w as goalLabel } from "./middleware-qnVsyvPC.mjs";
+import { g as isRole, h as isPlan, l as checkPushToken } from "./owner-access-BUXscoKo.mjs";
+import { A as isGoalMetric, C as goalLabel, D as isBehaviorAttribute, E as isAudience, G as segmentError, M as isQualification, O as isChannel, T as imageFileError, j as isLayout, k as isFrequency, l as TAGS, p as authMiddleware, u as attributeError, z as parseInstant } from "./middleware-uX_hVAj_.mjs";
 import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-DfB75Ss1.js
+//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-DRPJC4Eu.js
 var import_jsx_runtime = require_jsx_runtime();
 function cn(...inputs) {
 	return twMerge(clsx(inputs));
@@ -197,10 +197,14 @@ var addDevice = createServerFn({ method: "POST" }).middleware([authMiddleware]).
 		tag: input.tag
 	};
 }).handler(createSsrRpc("29d9819c5ef26103ba0f2166991269e5094bd0794a7a693c48810c06527bd393"));
-var dropDevice = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((id) => {
-	const value = (id ?? "").trim();
-	if (!value) throw new Error("Missing device.");
-	return value;
+var dropDevice = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
+	const businessId = (input?.businessId ?? "").trim();
+	const deviceId = (input?.deviceId ?? "").trim();
+	if (!businessId || !deviceId) throw new Error("Choose a token.");
+	return {
+		businessId,
+		deviceId
+	};
 }).handler(createSsrRpc("4e41039d82fa094af5c7e846dfa80a46b758fbc525983fa6c1450a0e45ff0681"));
 var setCapPreview = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((on) => Boolean(on)).handler(createSsrRpc("f5394ea229d65620f5bebd9c39e368177dc27e9985caa99356338ea24bb68988"));
 var resetWorkspace = createServerFn({ method: "POST" }).middleware([authMiddleware]).handler(createSsrRpc("df7c190e9e1c60745bd9adaad36f69eb5a9fe0091a6f993d9ace1c25aa1c5c13"));

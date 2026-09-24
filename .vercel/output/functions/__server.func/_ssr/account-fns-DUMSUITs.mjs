@@ -1,7 +1,7 @@
 import { i as TSS_SERVER_FUNCTION, r as createServerFn } from "./ssr.mjs";
-import { S as sendsAllowed, a as RIGHTS, b as quoteUsage, g as isRole, h as isPlan, l as checkPushToken, m as invitesAllowed, n as DEMO_STRIPE_SECRET, p as getSql, t as DEMO_SKYDO_SECRET, v as periodLabel } from "./owner-access-D4e8lj_h.mjs";
-import { A as isFrequency, B as parseInstant, D as isAudience, E as imageFileError, G as seedSubscribers, H as readProcess, K as segmentError, M as isLayout, N as isQualification, O as isBehaviorAttribute, P as isSegmentRule, U as reviewCampaign, W as seedCampaigns, _ as connectedBehavior, j as isGoalMetric, k as isChannel, l as TAGS, n as BASE_REACH, p as authMiddleware, q as starterSegments, r as FREE_REACH, u as attributeError, w as goalLabel, z as parseBehavior } from "./middleware-qnVsyvPC.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-C-YpIVph.js
+import { S as sendsAllowed, a as RIGHTS, b as quoteUsage, g as isRole, h as isPlan, l as checkPushToken, m as invitesAllowed, n as DEMO_STRIPE_SECRET, p as getSql, t as DEMO_SKYDO_SECRET, v as periodLabel } from "./owner-access-BUXscoKo.mjs";
+import { A as isGoalMetric, C as goalLabel, D as isBehaviorAttribute, E as isAudience, G as segmentError, H as reviewCampaign, K as starterSegments, M as isQualification, N as isSegmentRule, O as isChannel, R as parseBehavior, T as imageFileError, U as seedCampaigns, V as readProcess, W as seedSubscribers, g as connectedBehavior, j as isLayout, k as isFrequency, l as TAGS, n as BASE_REACH, p as authMiddleware, r as FREE_REACH, u as attributeError, z as parseInstant } from "./middleware-uX_hVAj_.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-DUMSUITs.js
 var createServerRpc = (serverFnMeta, splitImportFn) => {
 	const url = "/_serverFn/" + serverFnMeta.id;
 	return Object.assign(splitImportFn, {
@@ -405,6 +405,7 @@ async function accountFor(sql, userId) {
 		}))];
 	}
 	let businesses = [];
+	let tokens = [];
 	let seats = [];
 	let invoices = [];
 	let paymentEvents = [];
@@ -492,6 +493,7 @@ async function accountFor(sql, userId) {
 			status: row.status,
 			detail: row.detail
 		}));
+		tokens = await loadOwnerTokens(sql);
 	}
 	return {
 		isSystemAdmin: admin,
@@ -501,11 +503,29 @@ async function accountFor(sql, userId) {
 		members,
 		seats,
 		businesses,
+		tokens,
 		business,
 		invoices,
 		paymentEvents,
 		webhookSecrets
 	};
+}
+async function loadOwnerTokens(sql) {
+	return (await sql`
+    select s.id, s.business_id, b.name as business_name, s.name, s.external_user_id, s.platform, s.push_token
+    from subscribers s
+    join businesses b on b.id = s.business_id
+    where s.status = 'active'
+    order by b.name, s.name
+  `).map((row) => ({
+		id: row.id,
+		businessId: row.business_id,
+		businessName: row.business_name,
+		name: row.name,
+		userId: row.external_user_id,
+		platform: row.platform === "ios" ? "ios" : "android",
+		tokenTail: row.push_token ? row.push_token.slice(-8) : ""
+	}));
 }
 async function requireRight(sql, userId, right) {
 	const member = await membership(sql, userId);
@@ -698,15 +718,20 @@ var dropDevice_createServerFn_handler = createServerRpc({
 	name: "dropDevice",
 	filename: "src/lib/account-fns.ts"
 }, (opts) => dropDevice.__executeServer(opts));
-var dropDevice = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((id) => {
-	const value = (id ?? "").trim();
-	if (!value) throw new Error("Missing device.");
-	return value;
-}).handler(dropDevice_createServerFn_handler, async ({ context, data: id }) => {
+var dropDevice = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
+	const businessId = (input?.businessId ?? "").trim();
+	const deviceId = (input?.deviceId ?? "").trim();
+	if (!businessId || !deviceId) throw new Error("Choose a token.");
+	return {
+		businessId,
+		deviceId
+	};
+}).handler(dropDevice_createServerFn_handler, async ({ context, data }) => {
 	const sql = await getSql();
-	const current = await slice(sql, (await requireRight(sql, context.userId, "devices_edit")).businessId);
+	if (!await isAdmin(sql, context.userId)) throw new Error("Only the system owner can drop a token.");
+	const current = await slice(sql, data.businessId);
 	if (!current) throw new Error("Workspace missing.");
-	const device = current.subscribers.find((item) => item.id === id && item.status === "active");
+	const device = current.subscribers.find((item) => item.id === data.deviceId && item.status === "active");
 	if (!device) throw new Error("That token is already dropped.");
 	const reach = cloneReach(current.reach);
 	reach[device.platform][device.tag] = Math.max(0, reach[device.platform][device.tag] - 1);
@@ -715,7 +740,7 @@ var dropDevice = createServerFn({ method: "POST" }).middleware([authMiddleware])
 		...device.behavior,
 		permission: "denied"
 	})}
-      where id = ${id} and business_id = ${current.id}
+      where id = ${data.deviceId} and business_id = ${current.id}
     `;
 	await sql`
       update businesses set mau = ${Math.max(0, current.mau - 1)}, reach = ${JSON.stringify(reach)} where id = ${current.id}

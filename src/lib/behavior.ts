@@ -228,6 +228,16 @@ export function behaviorSummary(behavior: Behavior) {
   return `${permissionLabel(behavior.permission)} · ${behavior.opened} opens · ${behavior.sessions} sessions · ${behavior.purchases} purchases · ${days}`;
 }
 
+export function userPath(behavior: Behavior) {
+  return [
+    { id: "open", label: "Opened the app", done: behavior.sessions >= 1 },
+    { id: "push", label: "Can receive push", done: canReceivePush(behavior.permission) },
+    { id: "tap", label: "Opened a notification", done: behavior.opened >= 1 },
+    { id: "return", label: "Returned next day", done: behavior.returnedNextDay },
+    { id: "buy", label: "Purchased", done: behavior.purchases >= 1 },
+  ] as const;
+}
+
 export const APP_EVENTS = [
   "session_start",
   "first_open",

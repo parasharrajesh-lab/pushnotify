@@ -1,14 +1,328 @@
 import { o as __toESM } from "../_runtime.mjs";
 import { B as require_react, b as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
-import { _ as nextPlan, a as RIGHTS, b as quoteUsage, c as ROLE_LABEL, d as formatInr, i as PLAN_RATES, o as RIGHT_ROWS, s as ROLES, y as planLabel } from "./owner-access-D4e8lj_h.mjs";
-import { C as frequencyLabel, F as isoToIstInput, I as istInputToIso, J as stateLabel, K as segmentError, L as matchesAll, O as isBehaviorAttribute, P as isSegmentRule, Q as tokenCounts, S as formatSchedule, T as imageError, U as reviewCampaign, V as permissionLabel, X as suggestStart, Y as suggestEnd, Z as tagLabel, a as IOS_EVENTS, b as describeRule, c as STEPS, d as attributeLabel, f as audienceLabel, g as chartSeries, h as behaviorSummary, i as GOAL_METRICS, l as TAGS, m as behaviorLabel, o as PERMISSIONS, s as SAMPLE_DISH, t as APP_EVENTS, v as ctaHref, w as goalLabel, x as destinationPath, y as defaultBehavior } from "./middleware-qnVsyvPC.mjs";
-import { c as completeRegistration, d as formatCount, f as formatWhen, n as Input, s as cn, t as Button } from "./account-fns-DfB75Ss1.mjs";
-import { i as usePush, n as UserButton, r as useCurrentUserState, t as RedirectToSignIn } from "./gates-BuKxug9q.mjs";
+import { _ as nextPlan, a as RIGHTS, b as quoteUsage, c as ROLE_LABEL, d as formatInr, i as PLAN_RATES, o as RIGHT_ROWS, s as ROLES, y as planLabel } from "./owner-access-BUXscoKo.mjs";
+import { B as permissionLabel, C as goalLabel, D as isBehaviorAttribute, F as istInputToIso, G as segmentError, H as reviewCampaign, I as matchesAll, J as suggestEnd, N as isSegmentRule, P as isoToIstInput, Q as userPath, S as frequencyLabel, X as tagLabel, Y as suggestStart, Z as tokenCounts, _ as ctaHref, a as IOS_EVENTS, b as destinationPath, c as STEPS, d as attributeLabel, f as audienceLabel, h as chartSeries, i as GOAL_METRICS, l as TAGS, m as behaviorLabel, o as PERMISSIONS, q as stateLabel, s as SAMPLE_DISH, t as APP_EVENTS, v as defaultBehavior, w as imageError, x as formatSchedule, y as describeRule } from "./middleware-uX_hVAj_.mjs";
+import { c as completeRegistration, d as formatCount, f as formatWhen, n as Input, s as cn, t as Button } from "./account-fns-DRPJC4Eu.mjs";
+import { i as usePush, n as UserButton, r as useCurrentUserState, t as RedirectToSignIn } from "./gates-BXTl_cYB.mjs";
 import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
 import { a as ResponsiveContainer, i as Bar, n as YAxis, o as Tooltip, r as XAxis, t as BarChart } from "../_libs/recharts+[...].mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-CMIFK_bW.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-DG5_H785.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
+function count(value) {
+	if (!Number.isFinite(value) || (value ?? 0) < 0) return 0;
+	return Math.floor(value ?? 0);
+}
+function rate(part, whole) {
+	if (whole <= 0) return 0;
+	return Math.min(1, part / whole);
+}
+function campaignSnapshot(campaign) {
+	const channel = campaign.channel === "inapp" ? "inapp" : "push";
+	const layout = channel === "push" ? "lock" : campaign.layout === "modal" || campaign.layout === "primer" ? campaign.layout : "banner";
+	const state = campaign.deliveryState === "queued" || campaign.deliveryState === "scheduled" || campaign.deliveryState === "armed" ? campaign.deliveryState : "sent";
+	const targeted = count(campaign.targeted);
+	const delivered = Math.min(targeted, count(campaign.delivered));
+	const failed = Math.min(Math.max(0, targeted - delivered), count(campaign.failed));
+	const clicked = Math.min(delivered, count(campaign.clicked));
+	const goalHits = Math.min(delivered, count(campaign.goalHits));
+	return {
+		id: campaign.id,
+		title: campaign.title,
+		createdAt: campaign.createdAt,
+		channel,
+		layout,
+		state,
+		isTest: Boolean(campaign.isTest),
+		targeted,
+		delivered,
+		failed,
+		clicked,
+		goalHits
+	};
+}
+function rollup(rows) {
+	const sentRows = rows.filter((row) => row.state === "sent");
+	const targeted = sentRows.reduce((sum, row) => sum + row.targeted, 0);
+	const delivered = sentRows.reduce((sum, row) => sum + row.delivered, 0);
+	const failed = sentRows.reduce((sum, row) => sum + row.failed, 0);
+	const clicked = sentRows.reduce((sum, row) => sum + row.clicked, 0);
+	const goalHits = sentRows.reduce((sum, row) => sum + row.goalHits, 0);
+	return {
+		campaigns: rows.length,
+		sent: sentRows.length,
+		waiting: rows.length - sentRows.length,
+		targeted,
+		delivered,
+		failed,
+		clicked,
+		goalHits,
+		deliveryRate: rate(delivered, targeted),
+		failRate: rate(failed, targeted),
+		clickRate: rate(clicked, delivered),
+		goalRate: rate(goalHits, delivered)
+	};
+}
+function campaignAnalytics(campaigns) {
+	const rows = campaigns.map(campaignSnapshot);
+	const broadcasts = rows.filter((row) => !row.isTest);
+	const push = broadcasts.filter((row) => row.channel === "push");
+	const inapp = broadcasts.filter((row) => row.channel === "inapp");
+	return {
+		rows,
+		all: rollup(broadcasts),
+		push: rollup(push),
+		inapp: rollup(inapp),
+		tests: rows.filter((row) => row.isTest).length,
+		layouts: {
+			banner: rollup(inapp.filter((row) => row.layout === "banner")),
+			modal: rollup(inapp.filter((row) => row.layout === "modal")),
+			primer: rollup(inapp.filter((row) => row.layout === "primer"))
+		},
+		waiting: {
+			queued: broadcasts.filter((row) => row.state === "queued").length,
+			scheduled: broadcasts.filter((row) => row.state === "scheduled").length,
+			armed: broadcasts.filter((row) => row.state === "armed").length
+		}
+	};
+}
+function percent(rate) {
+	return `${Math.round(rate * 100)}%`;
+}
+var FILTERS = [
+	{
+		id: "all",
+		label: "All"
+	},
+	{
+		id: "push",
+		label: "Push"
+	},
+	{
+		id: "inapp",
+		label: "In-app"
+	}
+];
+function AnalyticsView() {
+	const campaigns = usePush((s) => s.campaigns);
+	const [filter, setFilter] = (0, import_react.useState)("all");
+	const report = campaignAnalytics(campaigns);
+	const roll = report[filter];
+	const shown = report.rows.filter((row) => !row.isTest && (filter === "all" || row.channel === filter));
+	const sent = shown.filter((row) => row.state === "sent");
+	const waiting = shown.filter((row) => row.state !== "sent");
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex flex-col gap-5",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+				className: "font-display text-3xl font-medium tracking-tight",
+				children: "Campaign analytics"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "pt-1 max-w-xl text-sm text-muted-foreground",
+				children: "Push and in-app are counted separately. A scheduled, queued, or armed campaign is not delivered yet, and a test run is not included in these rates."
+			})] }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "flex flex-wrap gap-2",
+				role: "group",
+				"aria-label": "Channel",
+				children: FILTERS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					"aria-pressed": filter === item.id,
+					onClick: () => setFilter(item.id),
+					className: cn("h-11 rounded-sm px-3 text-sm font-medium", filter === item.id ? "bg-primary text-primary-foreground" : "bg-muted"),
+					children: item.label
+				}, item.id))
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Rollup, { roll }),
+			filter !== "push" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "grid gap-2 sm:grid-cols-3",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LayoutStat, {
+						label: "Banner",
+						roll: report.layouts.banner
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LayoutStat, {
+						label: "Modal",
+						roll: report.layouts.modal
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LayoutStat, {
+						label: "Permission primer",
+						roll: report.layouts.primer
+					})
+				]
+			}) : null,
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+				className: "text-sm text-muted-foreground",
+				children: [
+					"Waiting · ",
+					formatCount(report.waiting.scheduled),
+					" scheduled · ",
+					formatCount(report.waiting.queued),
+					" queued for quiet hours ·",
+					" ",
+					formatCount(report.waiting.armed),
+					" waiting for a trigger",
+					report.tests > 0 ? ` · ${formatCount(report.tests)} test ${report.tests === 1 ? "run" : "runs"} excluded` : ""
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "flex flex-col gap-2",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "text-sm font-medium",
+					children: "Sent"
+				}), sent.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground",
+					children: filter === "inapp" ? "No in-app message has been sent yet." : filter === "push" ? "No push has been sent yet." : "No campaign has been sent yet."
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+					className: "flex flex-col gap-2",
+					children: sent.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+						className: "rounded-xl border border-border bg-card px-4 py-3",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-start justify-between gap-3",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "font-medium",
+									children: row.title
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "shrink-0 text-xs tabular-nums text-muted-foreground",
+									children: formatWhen(row.createdAt)
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "pt-1 text-sm text-muted-foreground",
+								children: [
+									row.channel === "push" ? "Push" : "In-app",
+									row.channel === "inapp" ? ` · ${row.layout}` : "",
+									" · ",
+									formatCount(row.delivered),
+									" delivered · ",
+									formatCount(row.failed),
+									" failed · ",
+									formatCount(row.clicked),
+									" clicked",
+									row.goalHits > 0 ? ` · ${formatCount(row.goalHits)} goal` : ""
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "pt-1 text-xs tabular-nums text-muted-foreground",
+								children: [
+									percent(row.targeted === 0 ? 0 : row.delivered / row.targeted),
+									" delivered · ",
+									percent(row.delivered === 0 ? 0 : row.clicked / row.delivered),
+									" clicked"
+								]
+							})
+						]
+					}, row.id))
+				})]
+			}),
+			waiting.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "flex flex-col gap-2",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "text-sm font-medium",
+					children: "Not sent yet"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+					className: "flex flex-col gap-2",
+					children: waiting.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+						className: "rounded-xl border border-border bg-card px-4 py-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "font-medium",
+							children: row.title
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+							className: "pt-1 text-sm text-muted-foreground",
+							children: [
+								row.channel === "push" ? "Push" : "In-app",
+								" · ",
+								stateLabel(row.state),
+								" · ",
+								formatCount(row.targeted),
+								" targeted, none delivered"
+							]
+						})]
+					}, `${row.id}-wait`))
+				})]
+			}) : null
+		]
+	});
+}
+function Rollup({ roll }) {
+	const tiles = [
+		[
+			"Targeted",
+			formatCount(roll.targeted),
+			`${formatCount(roll.sent)} sent`
+		],
+		[
+			"Delivered",
+			formatCount(roll.delivered),
+			percent(roll.deliveryRate)
+		],
+		[
+			"Failed",
+			formatCount(roll.failed),
+			percent(roll.failRate)
+		],
+		[
+			"Clicked",
+			formatCount(roll.clicked),
+			`${percent(roll.clickRate)} of delivered`
+		]
+	];
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+		className: "grid gap-2 sm:grid-cols-2 lg:grid-cols-4",
+		"aria-label": "Totals",
+		children: [tiles.map(([label, value, detail]) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+			className: "rounded-xl border border-border bg-card p-4",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-sm text-muted-foreground",
+					children: label
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "pt-1 font-display text-3xl font-medium tabular-nums",
+					children: value
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "pt-1 text-xs tabular-nums text-muted-foreground",
+					children: detail
+				})
+			]
+		}, label)), roll.goalHits > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+			className: "rounded-xl border border-border bg-card p-4 sm:col-span-2 lg:col-span-4",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-sm text-muted-foreground",
+				children: "Goal hits"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+				className: "pt-1 text-sm tabular-nums",
+				children: [
+					formatCount(roll.goalHits),
+					" · ",
+					percent(roll.goalRate),
+					" of delivered. A goal hit cannot exceed the messages that were delivered."
+				]
+			})]
+		}) : null]
+	});
+}
+function LayoutStat({ label, roll }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+		className: "rounded-xl border border-border bg-card px-4 py-3",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			className: "text-sm font-medium",
+			children: label
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+			className: "pt-1 text-sm tabular-nums text-muted-foreground",
+			children: [
+				formatCount(roll.sent),
+				" sent · ",
+				formatCount(roll.delivered),
+				" delivered · ",
+				percent(roll.clickRate),
+				" clicked"
+			]
+		})]
+	});
+}
 function Phone({ platform, title, body, link, image, video, appName, logo, pulse, surface = "lock", button = "", ctaLink = "", onPlatform }) {
 	const now = /* @__PURE__ */ new Date();
 	const time = now.toLocaleTimeString("en-IN", {
@@ -750,30 +1064,58 @@ function ConnectView() {
 		]
 	});
 }
+var PATHS = [
+	{
+		id: "all",
+		label: "All"
+	},
+	{
+		id: "open",
+		label: "Opened the app"
+	},
+	{
+		id: "push",
+		label: "Can receive push"
+	},
+	{
+		id: "tap",
+		label: "Opened a notification"
+	},
+	{
+		id: "return",
+		label: "Returned next day"
+	},
+	{
+		id: "buy",
+		label: "Purchased"
+	}
+];
 function DevicesView() {
 	const subscribers = usePush((s) => s.subscribers);
 	const addDevice = usePush((s) => s.addDevice);
-	const unregister = usePush((s) => s.unregister);
 	const canEdit = usePush((s) => s.rights.includes("devices_edit"));
 	const [query, setQuery] = (0, import_react.useState)("");
 	const [platform, setPlatform] = (0, import_react.useState)("all");
+	const [step, setStep] = (0, import_react.useState)("all");
 	const [open, setOpen] = (0, import_react.useState)(false);
 	const [name, setName] = (0, import_react.useState)("");
 	const [userId, setUserId] = (0, import_react.useState)("");
 	const [city, setCity] = (0, import_react.useState)("Mumbai");
 	const [nextPlatform, setNextPlatform] = (0, import_react.useState)("android");
 	const [tag, setTag] = (0, import_react.useState)("orders");
+	const fleet = (0, import_react.useMemo)(() => subscribers.filter((device) => platform === "all" || device.platform === platform), [subscribers, platform]);
 	const rows = (0, import_react.useMemo)(() => {
 		const q = query.trim().toLowerCase();
-		return subscribers.filter((device) => {
-			if (platform !== "all" && device.platform !== platform) return false;
+		return fleet.filter((device) => {
+			const path = userPath(device.behavior ?? defaultBehavior(device.status));
+			if (step !== "all" && !path.find((item) => item.id === step)?.done) return false;
 			if (!q) return true;
 			return device.name.toLowerCase().includes(q) || device.userId.toLowerCase().includes(q) || device.city.toLowerCase().includes(q);
 		});
 	}, [
-		subscribers,
+		fleet,
 		query,
-		platform
+		step
 	]);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-col gap-5",
@@ -782,16 +1124,17 @@ function DevicesView() {
 				className: "flex flex-wrap items-end justify-between gap-3",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 					className: "font-display text-3xl font-medium tracking-tight",
-					children: "Devices"
+					children: "User path analytics"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					className: "pt-1 text-sm text-muted-foreground",
-					children: "A sample of the Metro Bites fleet. Dead tokens drop out of MAU."
+					className: "pt-1 max-w-xl text-sm text-muted-foreground",
+					children: "How people move from opening the app to a purchase. Dropping a token is a system owner setting, not a business action."
 				})] }), canEdit ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
 					variant: "outline",
 					onClick: () => setOpen((v) => !v),
 					children: open ? "Close" : "Add test device"
 				}) : null]
 			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Funnel, { people: fleet }),
 			open ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
 				className: "grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2",
 				onSubmit: (event) => {
@@ -866,15 +1209,15 @@ function DevicesView() {
 				]
 			}) : null,
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex flex-col gap-3 sm:flex-row",
+				className: "flex flex-col gap-3",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
 					value: query,
 					onChange: (e) => setQuery(e.target.value),
 					placeholder: "Search name, user, city",
-					"aria-label": "Search devices"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "flex gap-2",
-					children: [
+					"aria-label": "Search people"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex flex-wrap gap-2",
+					children: [[
 						"all",
 						"android",
 						"ios"
@@ -882,71 +1225,102 @@ function DevicesView() {
 						type: "button",
 						"aria-pressed": platform === item,
 						onClick: () => setPlatform(item),
-						className: cn("h-11 rounded-sm px-3 text-sm font-medium", platform === item ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"),
+						className: cn("h-11 rounded-sm px-3 text-sm font-medium", platform === item ? "bg-primary text-primary-foreground" : "bg-muted"),
 						children: item === "all" ? "All" : item === "android" ? "Android" : "iOS"
-					}, item))
+					}, item)), PATHS.filter((item) => item.id !== "all").map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						"aria-pressed": step === item.id,
+						onClick: () => setStep((current) => current === item.id ? "all" : item.id),
+						className: cn("h-11 rounded-sm px-3 text-sm font-medium", step === item.id ? "bg-primary text-primary-foreground" : "bg-muted"),
+						children: item.label
+					}, item.id))]
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
 				className: "flex flex-col gap-2",
 				children: rows.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", {
 					className: "rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground",
-					children: "No devices match that filter."
-				}) : rows.map((device) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
-					className: "rounded-xl border border-border bg-card px-4 py-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-start justify-between gap-3",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "min-w-0",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								className: "truncate font-medium",
-								children: device.name
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-								className: "truncate font-mono text-xs text-muted-foreground",
-								children: [
-									device.userId,
-									" · ",
-									device.city,
-									device.pushToken ? ` · token ${device.pushToken.slice(-8)}` : ""
-								]
-							})]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							className: cn("text-xs font-medium", device.status === "active" ? "text-ok" : "text-danger"),
-							children: device.status === "active" ? "Active" : "Unregistered"
-						})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex flex-wrap items-center gap-2 pt-3 text-xs text-muted-foreground",
+					children: "No one matches that path."
+				}) : rows.map((device) => {
+					const behavior = device.behavior ?? defaultBehavior(device.status);
+					const path = userPath(behavior);
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+						className: "rounded-xl border border-border bg-card px-4 py-3",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "rounded-sm bg-muted px-2 py-1",
-								children: device.platform === "android" ? "Android" : "iOS"
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-start justify-between gap-3",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "truncate font-medium",
+										children: device.name
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "truncate font-mono text-xs text-muted-foreground",
+										children: [
+											device.userId,
+											" · ",
+											device.city,
+											" · ",
+											device.platform === "android" ? "Android" : "iOS",
+											" · ",
+											tagLabel(device.tag)
+										]
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-xs text-muted-foreground",
+									children: permissionLabel(behavior.permission)
+								})]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "rounded-sm bg-muted px-2 py-1",
-								children: tagLabel(device.tag)
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ol", {
+								className: "flex flex-wrap gap-2 pt-3",
+								children: path.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", {
+									className: cn("rounded-sm px-2 py-1 text-xs font-medium", item.done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"),
+									children: item.label
+								}, item.id))
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: behaviorSummary(device.behavior ?? defaultBehavior(device.status)) }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "tabular-nums",
-								children: formatWhen(device.lastSeen)
-							}),
-							device.status === "active" && canEdit ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								className: "ml-auto h-11 rounded-sm px-2 text-xs font-medium text-danger hover:bg-danger-bg",
-								onClick: () => {
-									(async () => {
-										const error = await unregister(device.id);
-										if (error) toast.error(error);
-										else toast("Token marked unregistered. MAU −1.");
-									})();
-								},
-								children: "Drop token"
-							}) : null
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "pt-2 text-xs tabular-nums text-muted-foreground",
+								children: ["Last seen ", formatWhen(device.lastSeen)]
+							})
 						]
-					})]
-				}, device.id))
+					}, device.id);
+				})
 			})
 		]
+	});
+}
+function Funnel({ people }) {
+	const known = people.length;
+	const counts = PATHS.filter((item) => item.id !== "all").map((item) => ({
+		...item,
+		count: people.filter((device) => userPath(device.behavior ?? defaultBehavior(device.status)).find((step) => step.id === item.id)?.done).length
+	}));
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+		className: "rounded-xl border border-border bg-card p-4",
+		"aria-label": "Path funnel",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+			className: "text-sm font-medium",
+			children: [
+				"Path · ",
+				formatCount(known),
+				" known"
+			]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+			className: "flex flex-col gap-2 pt-3",
+			children: counts.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex justify-between text-xs text-muted-foreground",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: item.label }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "tabular-nums",
+					children: formatCount(item.count)
+				})]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "mt-1 h-2 rounded-sm bg-muted",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "h-2 rounded-sm bg-primary",
+					style: { width: known === 0 ? "0%" : `${Math.round(item.count / known * 100)}%` }
+				})
+			})] }, item.id))
+		})]
 	});
 }
 function EnterpriseOnboard() {
@@ -2653,12 +3027,17 @@ var NAV = [
 	},
 	{
 		id: "devices",
-		label: "Devices",
+		label: "User path analytics",
 		right: "devices"
 	},
 	{
 		id: "activity",
 		label: "Activity",
+		right: "activity"
+	},
+	{
+		id: "analytics",
+		label: "Analytics",
 		right: "activity"
 	},
 	{
@@ -2811,6 +3190,7 @@ function Shell() {
 						ready && !loadError && businessId && onboarded && view === "segments" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SegmentsView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "devices" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DevicesView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "activity" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ActivityView, {}) : null,
+						ready && !loadError && businessId && onboarded && view === "analytics" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AnalyticsView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "plan" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlanView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "team" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TeamView, {}) : null,
 						ready && !loadError && businessId && onboarded && view === "connect" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ConnectView, {}) : null,

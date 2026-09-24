@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/owner-access-D4e8lj_h.js
+//#region node_modules/.nitro/vite/services/ssr/assets/owner-access-BUXscoKo.js
 var ROLES = [
 	"owner",
 	"developer",
@@ -52,15 +52,15 @@ var RIGHT_ROWS = [
 	},
 	{
 		id: "devices",
-		label: "View devices"
+		label: "User path analytics"
 	},
 	{
 		id: "devices_edit",
-		label: "Register and drop tokens"
+		label: "Register a test device"
 	},
 	{
 		id: "activity",
-		label: "Delivery log"
+		label: "Delivery log and campaign analytics"
 	},
 	{
 		id: "plan",

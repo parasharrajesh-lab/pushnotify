@@ -13,6 +13,7 @@ import {
   seedBehavior,
   segmentError,
   starterSegments,
+  userPath,
   type Behavior,
   type SegmentRule,
 } from "./behavior.ts";
@@ -81,6 +82,14 @@ test("estimated reach scales the known sample and never drops a real match", () 
   assert.equal(estimateReach(136, 12, 0), 0);
   assert.equal(estimateReach(136, 12, 6), 68);
   assert.equal(estimateReach(4, 12, 6), 6);
+});
+
+test("a user path is the steps they have already done", () => {
+  const opened = seedBehavior("usr_19f2") as Behavior;
+  const waiting = seedBehavior("usr_24c3") as Behavior;
+  const path = userPath(opened);
+  assert.deepEqual(path.map((step) => step.done), [true, true, true, true, true]);
+  assert.deepEqual(userPath(waiting).map((step) => step.done), [false, false, false, false, false]);
 });
 
 test("app events and iOS permission are separate attributes", () => {

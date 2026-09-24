@@ -219,7 +219,29 @@ export function seedCampaigns(): Campaign[] {
       ...projectDelivery(4680, 21),
       seed: true,
     },
+    inAppSeed(),
   ];
+}
+
+function inAppSeed(): Campaign {
+  const stats = projectDelivery(1860, 18);
+  return {
+    id: "c6",
+    title: "Your cart is still open",
+    body: "Checkout before the kitchen closes the lunch window.",
+    link: "metrobites://cart",
+    audience: { kind: "all" },
+    createdAt: daysAgo(2, 13),
+    ...stats,
+    seed: true,
+    channel: "inapp",
+    layout: "banner",
+    deliveryState: "sent",
+    qualification: "live",
+    button: "Open cart",
+    goalMetric: "sessions",
+    goalHits: Math.min(stats.delivered, Math.round(stats.delivered * 0.22)),
+  };
 }
 
 /** Delivered volume already reflected in the chart, excluding sends made in this session. */

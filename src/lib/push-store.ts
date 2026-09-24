@@ -34,10 +34,12 @@ import {
   type Grants,
   type InvoiceRow,
   type MemberRow,
+  type OwnerToken,
   type PaymentEventRow,
   type PlanId,
   type Role,
   type SeatRow,
+  type SystemLogRow,
 } from "@/lib/account-types";
 import { BASE_REACH, mauCap, type Campaign, type Platform, type Reach, type Subscriber, type Tag } from "@/lib/push";
 import type { CampaignDraft } from "@/lib/notify";
@@ -55,6 +57,8 @@ type PushState = {
   members: MemberRow[];
   seats: SeatRow[];
   businesses: BusinessListRow[];
+  tokens: OwnerToken[];
+  logs: SystemLogRow[];
   businessId: string | null;
   businessName: string;
   logo: string;
@@ -79,7 +83,7 @@ type PushState = {
   send: (input: CampaignDraft) => Promise<string | null>;
   saveSegment: (input: SegmentDraft) => Promise<string | null>;
   addDevice: (input: { name: string; userId: string; platform: Platform; city: string; tag: Tag }) => Promise<string | null>;
-  unregister: (id: string) => Promise<string | null>;
+  dropToken: (input: { businessId: string; deviceId: string }) => Promise<string | null>;
   setOverCap: (on: boolean) => Promise<string | null>;
   reset: () => Promise<string | null>;
   saveBrand: (input: { name: string; logo: string }) => Promise<string | null>;
@@ -112,6 +116,8 @@ function fromAccount(account: AccountPayload) {
     members: account.members,
     seats: account.seats,
     businesses: account.businesses,
+    tokens: account.tokens,
+    logs: account.logs,
     businessId: business?.id ?? null,
     businessName: business?.name ?? "",
     logo: business?.logo ?? "",
@@ -155,6 +161,8 @@ export const usePush = create<PushState>((set) => ({
   members: [],
   seats: [],
   businesses: [],
+  tokens: [],
+  logs: [],
   businessId: null,
   businessName: "",
   logo: "",
@@ -185,7 +193,7 @@ export const usePush = create<PushState>((set) => ({
   send: (input) => apply(() => sendPush({ data: input })),
   saveSegment: (input) => apply(() => saveSegment({ data: input })),
   addDevice: (input) => apply(() => addDeviceFn({ data: input })),
-  unregister: (id) => apply(() => dropDevice({ data: id })),
+  dropToken: (input) => apply(() => dropDevice({ data: input })),
   setOverCap: (on) => apply(() => setCapPreview({ data: on })),
   reset: () => apply(() => resetWorkspace()),
   saveBrand: (input) => apply(() => updateBrand({ data: input })),

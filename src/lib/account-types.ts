@@ -39,9 +39,9 @@ export const RIGHTS: Record<Role, readonly string[]> = {
 
 export const RIGHT_ROWS: { id: string; label: string }[] = [
   { id: "send", label: "Send push, image, video, deep link" },
-  { id: "devices", label: "View devices" },
-  { id: "devices_edit", label: "Register and drop tokens" },
-  { id: "activity", label: "Delivery log" },
+  { id: "devices", label: "User path analytics" },
+  { id: "devices_edit", label: "Register a test device" },
+  { id: "activity", label: "Delivery log and campaign analytics" },
   { id: "plan", label: "MAU and subscription" },
   { id: "plan_edit", label: "Change plan" },
   { id: "team", label: "Invite the team and set roles" },
@@ -117,6 +117,16 @@ export type ConnectionRow = {
   appKey: string;
 };
 
+export type OwnerToken = {
+  id: string;
+  businessId: string;
+  businessName: string;
+  name: string;
+  userId: string;
+  platform: "android" | "ios";
+  tokenTail: string;
+};
+
 export type BusinessListRow = {
   id: string;
   name: string;
@@ -151,6 +161,14 @@ export type BusinessSlice = {
   invoices: InvoiceRow[];
 };
 
+export type SystemLogRow = {
+  id: string;
+  action: string;
+  businessName: string;
+  detail: string;
+  createdAt: string;
+};
+
 export type AccountPayload = {
   isSystemAdmin: boolean;
   email: string;
@@ -159,6 +177,8 @@ export type AccountPayload = {
   members: MemberRow[];
   seats: SeatRow[];
   businesses: BusinessListRow[];
+  tokens: OwnerToken[];
+  logs: SystemLogRow[];
   business: BusinessSlice | null;
   invoices: InvoiceRow[];
   paymentEvents: PaymentEventRow[];

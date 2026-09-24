@@ -5,7 +5,21 @@ import { Input } from "@/components/ui/input";
 import { nextPlan, planLabel, type PlanId } from "@/lib/account-types";
 import { PLAN_RATES, formatInr, quoteUsage, runLogicChecks } from "@/lib/billing";
 import { usePush } from "@/lib/push-store";
-import { cn, formatCount } from "@/lib/utils";
+import { cn, formatCount, formatWhen } from "@/lib/utils";
+
+const SECTIONS = [
+  ["users", "B2B users"],
+  ["onboarding", "Enterprise onboarding"],
+  ["workspace", "Enterprise workspace"],
+  ["plan", "Plan status"],
+  ["invoices", "Invoices"],
+  ["subscriptions", "Subscriptions"],
+  ["gateways", "Payment gateways"],
+  ["settings", "System settings"],
+  ["log", "System log"],
+] as const;
+
+type Section = (typeof SECTIONS)[number][0];
 
 const CHECKS = runLogicChecks();
 
@@ -16,6 +30,9 @@ export function AdminPanel() {
   const registerEnterprise = usePush((s) => s.registerEnterprise);
   const changeBusinessPlan = usePush((s) => s.changeBusinessPlan);
   const setGrants = usePush((s) => s.setGrants);
+  const dropToken = usePush((s) => s.dropToken);
+  const tokens = usePush((s) => s.tokens);
+  const logs = usePush((s) => s.logs);
   const issueBill = usePush((s) => s.issueBill);
   const paymentEvents = usePush((s) => s.paymentEvents);
   const webhookSecrets = usePush((s) => s.webhookSecrets);
@@ -29,14 +46,31 @@ export function AdminPanel() {
   const [contact, setContact] = useState("");
   const [email, setEmail] = useState("");
   const [plan, setPlan] = useState<PlanId>("advance");
+  const [section, setSection] = useState<Section>("users");
+  const enterprises = businesses.filter((business) => business.kind === "enterprise");
+  const waitingEnterprises = enterprises.filter((business) => !business.onboarded);
 
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h1 className="font-display text-3xl font-medium tracking-tight">Subscriptions</h1>
+        <h1 className="font-display text-3xl font-medium tracking-tight">System management</h1>
         <p className="pt-1 max-w-xl text-sm text-muted-foreground">
-          Free, Basic, and Advance are the rates. An enterprise is billed pay per use on Basic or Advance after the owner accepts. Stripe and Skydo confirm a paid plan.
+          B2B user management for every workspace. Enterprise onboarding, the workspace and its device tokens, plan status, invoices, subscriptions, payment gateways, system settings, and the system log.
         </p>
+        <div className="flex flex-wrap gap-2 pt-4" role="group" aria-label="System management">
+          {SECTIONS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={section === id}
+              onClick={() => setSection(id)}
+              className={cn("h-11 rounded-sm px-3 text-sm font-medium", section === id ? "bg-primary text-primary-foreground" : "bg-muted")}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {section === "subscriptions" ? (
         <div className="grid gap-3 pt-4 sm:grid-cols-2">
           {(Object.keys(PLAN_RATES) as PlanId[]).map((id) => {
             const rate = PLAN_RATES[id];
@@ -50,8 +84,44 @@ export function AdminPanel() {
             );
           })}
         </div>
+        ) : null}
       </section>
 
+      {section === "settings" ? (
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-medium">System settings</h2>
+        <p className="text-sm text-muted-foreground">
+          Grants apply to every B2B workspace. Dropping a token is only done by the system owner. The device leaves that workspace's MAU and can no longer receive push.
+        </p>
+        {tokens.length === 0 ? <p className="text-sm text-muted-foreground">No active device is waiting.</p> : null}
+        {tokens.map((token) => (
+          <article key={token.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+            <div className="min-w-0">
+              <p className="font-medium">{token.name}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                {token.businessName} · {token.userId} · {token.platform === "ios" ? "iOS" : "Android"}
+                {token.tokenTail ? ` · token ${token.tokenTail}` : " · no token saved"}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="h-11 rounded-sm px-3 text-sm font-medium text-danger hover:bg-danger-bg"
+              onClick={() => {
+                void (async () => {
+                  const error = await dropToken({ businessId: token.businessId, deviceId: token.id });
+                  if (error) toast.error(error);
+                  else toast("Token dropped. That device left MAU.");
+                })();
+              }}
+            >
+              Drop token
+            </button>
+          </article>
+        ))}
+      </section>
+      ) : null}
+
+      {section === "onboarding" ? (
       <form
         className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4"
         onSubmit={(event) => {
@@ -96,10 +166,29 @@ export function AdminPanel() {
         </div>
         <Button type="submit">Register enterprise</Button>
       </form>
+      ) : null}
 
+      {section === "users" || section === "plan" || section === "subscriptions" || section === "workspace" || section === "invoices" || section === "settings" ? (
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium">Workspaces</h2>
-        {businesses.map((business) => {
+        <h2 className="text-sm font-medium">
+          {section === "users"
+            ? "B2B users"
+            : section === "plan"
+              ? "Subscription plan status"
+              : section === "subscriptions"
+                ? "Move a workspace"
+                : section === "workspace"
+                  ? "Enterprise workspace"
+                  : section === "invoices"
+                    ? "Issue a bill"
+                    : "Grants for every B2B workspace"}
+        </h2>
+        {(section === "workspace" ? enterprises : businesses).length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {section === "workspace" ? "No enterprise workspace yet. Register one under Enterprise onboarding." : "No business has registered yet."}
+          </p>
+        ) : null}
+        {(section === "workspace" ? enterprises : businesses).map((business) => {
           const quote = business.kind === "enterprise" ? quoteUsage(business.plan, business.mau) : null;
           return (
             <article key={business.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card px-4 py-3">
@@ -112,14 +201,16 @@ export function AdminPanel() {
                     {business.kind === "enterprise" ? (business.onboarded ? "Enterprise live" : "Waiting to accept") : "Self-serve"} ·{" "}
                     {formatCount(business.mau)} MAU
                   </p>
-                  {quote ? (
+                  {quote && (section === "plan" || section === "invoices") ? (
                     <p className="pt-1 text-sm tabular-nums">
                       This period {formatInr(quote.totalPaise)}
                       {quote.extra > 0 ? ` · ${formatCount(quote.extra)} extra MAU ${formatInr(quote.overagePaise)}` : " · inside the included MAU"}
                     </p>
                   ) : null}
                 </div>
+                {section === "subscriptions" || section === "invoices" ? (
                 <div className="flex flex-wrap gap-2">
+                  {section === "subscriptions" ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -135,7 +226,8 @@ export function AdminPanel() {
                   >
                     Set {planLabel(nextPlan(business.plan))}
                   </Button>
-                  {business.kind === "enterprise" ? (
+                  ) : null}
+                  {section === "invoices" && business.kind === "enterprise" ? (
                     <Button
                       size="sm"
                       onClick={() => {
@@ -150,7 +242,9 @@ export function AdminPanel() {
                     </Button>
                   ) : null}
                 </div>
+                ) : null}
               </div>
+              {section === "settings" ? (
               <div className="flex flex-wrap gap-2">
                 {(
                   [
@@ -183,27 +277,69 @@ export function AdminPanel() {
                   </button>
                 ))}
               </div>
+              ) : null}
+              {section === "workspace" ? (
+                <div className="flex flex-col gap-2">
+                  {tokens.filter((token) => token.businessId === business.id).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No active device on this workspace.</p>
+                  ) : null}
+                  {tokens
+                    .filter((token) => token.businessId === business.id)
+                    .map((token) => (
+                      <div key={token.id} className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          {token.name} · {token.userId} · {token.platform === "ios" ? "iOS" : "Android"}
+                          {token.tokenTail ? ` · token ${token.tokenTail}` : " · no token saved"}
+                        </p>
+                        <button
+                          type="button"
+                          className="h-11 rounded-sm px-3 text-sm font-medium text-danger hover:bg-danger-bg"
+                          onClick={() => {
+                            void (async () => {
+                              const error = await dropToken({ businessId: token.businessId, deviceId: token.id });
+                              if (error) toast.error(error);
+                              else toast("Token dropped. That device left MAU.");
+                            })();
+                          }}
+                        >
+                          Drop token
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              ) : null}
             </article>
           );
         })}
       </section>
-
-      {seats.length > 0 ? (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium">Waiting for registration</h2>
-          {seats.map((seat) => (
-            <p key={seat.id} className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
-              <span className="font-medium">{seat.businessName}</span>
-              <span className="text-muted-foreground">
-                {" "}
-                · {seat.email} · {planLabel(seat.plan)}
-                {seat.kind === "enterprise" ? " · Enterprise pay per use" : ""}
-              </span>
-            </p>
-          ))}
-        </section>
       ) : null}
 
+      {section === "onboarding" ? (
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-medium">Waiting to come online</h2>
+        {seats.length === 0 && waitingEnterprises.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No enterprise is waiting. A registered enterprise stays here until the workspace accepts pay-per-use.</p>
+        ) : null}
+        {seats.map((seat) => (
+          <p key={seat.id} className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
+            <span className="font-medium">{seat.businessName}</span>
+            <span className="text-muted-foreground">
+              {" "}
+              · {seat.email} · {planLabel(seat.plan)}
+              {seat.kind === "enterprise" ? " · Enterprise pay per use · not signed in yet" : ""}
+            </span>
+          </p>
+        ))}
+        {waitingEnterprises.map((business) => (
+          <p key={business.id} className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
+            <span className="font-medium">{business.name}</span>
+            <span className="text-muted-foreground"> · {business.ownerEmail || "Owner pending"} · {planLabel(business.plan)} · waiting to accept</span>
+          </p>
+        ))}
+      </section>
+      ) : null}
+
+      {section === "invoices" ? (
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium">Bills</h2>
         {invoices.length === 0 ? <p className="text-sm text-muted-foreground">No bill has been issued.</p> : null}
@@ -218,14 +354,15 @@ export function AdminPanel() {
           </p>
         ))}
       </section>
+      ) : null}
 
+      {section === "gateways" ? (
       <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
         <h2 className="text-sm font-medium">Stripe and Skydo</h2>
         <p className="text-sm text-muted-foreground">
-          Point Stripe at /api/webhooks/stripe and Skydo at /api/webhooks/skydo. Stripe signs Stripe-Signature. Skydo signs X-Skydo-Signature with HMAC-SHA256 of the raw body. A failed payment pauses sends. A deleted Stripe subscription moves the workspace to Free.
+          Point Stripe at /api/webhooks/stripe and Skydo at /api/webhooks/skydo. Stripe signs Stripe-Signature. Skydo signs X-Skydo-Signature with HMAC-SHA256 of the raw body. A failed payment pauses sends. A deleted Stripe subscription moves the workspace to Free. Signing secrets are not shown on this page.
         </p>
-        <p className="break-all font-mono text-xs text-subtle">Stripe secret {webhookSecrets.stripe || stripeSecret}</p>
-        <p className="break-all font-mono text-xs text-subtle">Skydo secret {webhookSecrets.skydo || skydoSecret}</p>
+        <p className="text-sm text-muted-foreground">Stripe {webhookSecrets.stripe ? "secret is saved" : "secret is not set"} · Skydo {webhookSecrets.skydo ? "secret is saved" : "secret is not set"}</p>
         <form
           className="flex flex-col gap-3"
           onSubmit={(event) => {
@@ -252,11 +389,11 @@ export function AdminPanel() {
         >
           <label className="flex flex-col gap-1 text-sm font-medium">
             Stripe signing secret
-            <Input value={stripeSecret} onChange={(e) => setStripeSecret(e.target.value)} placeholder={webhookSecrets.stripe} />
+            <Input value={stripeSecret} onChange={(e) => setStripeSecret(e.target.value)} placeholder="Paste a new signing secret" autoComplete="off" />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium">
             Skydo signing secret
-            <Input value={skydoSecret} onChange={(e) => setSkydoSecret(e.target.value)} placeholder={webhookSecrets.skydo} />
+            <Input value={skydoSecret} onChange={(e) => setSkydoSecret(e.target.value)} placeholder="Paste a new signing secret" autoComplete="off" />
           </label>
           <Button type="submit">Save secrets</Button>
         </form>
@@ -330,7 +467,35 @@ export function AdminPanel() {
           ))}
         </ul>
       </section>
+      ) : null}
 
+      {section === "log" ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-medium">System log</h2>
+          <p className="text-sm text-muted-foreground">Owner actions and applied gateway payments. Secrets are never written here.</p>
+          {logs.length === 0 && paymentEvents.length === 0 ? <p className="text-sm text-muted-foreground">No system action has been recorded yet.</p> : null}
+          {logs.map((entry) => (
+            <p key={entry.id} className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
+              <span className="font-medium">{entry.action}</span>
+              <span className="text-muted-foreground">
+                {entry.businessName ? ` · ${entry.businessName}` : ""} · {entry.detail} · {formatWhen(entry.createdAt)}
+              </span>
+            </p>
+          ))}
+          {paymentEvents.map((event) => (
+            <p key={event.id} className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
+              <span className="font-medium">Gateway · {event.provider}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                · {event.eventType} · {event.email || "no email"} · {event.status}
+                {event.plan ? ` · ${event.plan}` : ""}
+              </span>
+            </p>
+          ))}
+        </section>
+      ) : null}
+
+      {section === "subscriptions" ? (
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium">Rules</h2>
         <ul className="flex flex-col gap-2">
@@ -342,6 +507,7 @@ export function AdminPanel() {
           ))}
         </ul>
       </section>
+      ) : null}
     </div>
   );
 }

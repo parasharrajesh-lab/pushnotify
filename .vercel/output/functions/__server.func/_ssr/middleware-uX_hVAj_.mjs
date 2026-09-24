@@ -1,5 +1,5 @@
 import { n as createMiddleware } from "./ssr.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/middleware-qnVsyvPC.js
+//#region node_modules/.nitro/vite/services/ssr/assets/middleware-uX_hVAj_.js
 var PERMISSIONS = [
 	"not_asked",
 	"denied",
@@ -310,9 +310,34 @@ function describeRule(rule) {
 	const window = rule.behavior === "purchases" ? " in 30 days" : rule.behavior === "days_since_open" ? "" : " in 7 days";
 	return `${behaviorLabel(rule.behavior)} ${op} ${rule.value}${window}`;
 }
-function behaviorSummary(behavior) {
-	const days = behavior.daysSinceOpen == null ? "never opened" : `${behavior.daysSinceOpen}d since open`;
-	return `${permissionLabel(behavior.permission)} · ${behavior.opened} opens · ${behavior.sessions} sessions · ${behavior.purchases} purchases · ${days}`;
+function userPath(behavior) {
+	return [
+		{
+			id: "open",
+			label: "Opened the app",
+			done: behavior.sessions >= 1
+		},
+		{
+			id: "push",
+			label: "Can receive push",
+			done: canReceivePush(behavior.permission)
+		},
+		{
+			id: "tap",
+			label: "Opened a notification",
+			done: behavior.opened >= 1
+		},
+		{
+			id: "return",
+			label: "Returned next day",
+			done: behavior.returnedNextDay
+		},
+		{
+			id: "buy",
+			label: "Purchased",
+			done: behavior.purchases >= 1
+		}
+	];
 }
 var APP_EVENTS = [
 	"session_start",
@@ -667,8 +692,29 @@ function seedCampaigns() {
 			createdAt: daysAgo(12, 12),
 			...projectDelivery(4680, 21),
 			seed: true
-		}
+		},
+		inAppSeed()
 	];
+}
+function inAppSeed() {
+	const stats = projectDelivery(1860, 18);
+	return {
+		id: "c6",
+		title: "Your cart is still open",
+		body: "Checkout before the kitchen closes the lunch window.",
+		link: "metrobites://cart",
+		audience: { kind: "all" },
+		createdAt: daysAgo(2, 13),
+		...stats,
+		seed: true,
+		channel: "inapp",
+		layout: "banner",
+		deliveryState: "sent",
+		qualification: "live",
+		button: "Open cart",
+		goalMetric: "sessions",
+		goalHits: Math.min(stats.delivered, Math.round(stats.delivered * .22))
+	};
 }
 /** Delivered volume already reflected in the chart, excluding sends made in this session. */
 var HISTORY = [
@@ -1056,9 +1102,9 @@ var authMiddleware = createMiddleware({ type: "function" }).client(async ({ next
 	return next({ sendContext: { bearerToken: getBearerToken() ?? void 0 } });
 }).server(async ({ next, context }) => {
 	const { assertSameSiteRequest } = await import("./isolation.server-CGNg1r0B.mjs");
-	const { requireUserId } = await import("./verify.server-DjsZ6Nly.mjs");
+	const { requireUserId } = await import("./verify.server-DldGXjYb.mjs");
 	assertSameSiteRequest();
 	return next({ context: { userId: await requireUserId(context.bearerToken) } });
 });
 //#endregion
-export { isFrequency as A, parseInstant as B, frequencyLabel as C, isAudience as D, imageFileError as E, isoToIstInput as F, seedSubscribers as G, readProcess as H, istInputToIso as I, stateLabel as J, segmentError as K, matchesAll as L, isLayout as M, isQualification as N, isBehaviorAttribute as O, isSegmentRule as P, tokenCounts as Q, mauCap as R, formatSchedule as S, imageError as T, reviewCampaign as U, permissionLabel as V, seedCampaigns as W, suggestStart as X, suggestEnd as Y, tagLabel as Z, connectedBehavior as _, IOS_EVENTS as a, describeRule as b, STEPS as c, attributeLabel as d, audienceLabel as f, chartSeries as g, behaviorSummary as h, GOAL_METRICS as i, isGoalMetric as j, isChannel as k, TAGS as l, behaviorLabel as m, BASE_REACH as n, PERMISSIONS as o, authMiddleware as p, starterSegments as q, FREE_REACH as r, SAMPLE_DISH as s, APP_EVENTS as t, attributeError as u, ctaHref as v, goalLabel as w, destinationPath as x, defaultBehavior as y, parseBehavior as z };
+export { isGoalMetric as A, permissionLabel as B, goalLabel as C, isBehaviorAttribute as D, isAudience as E, istInputToIso as F, segmentError as G, reviewCampaign as H, matchesAll as I, suggestEnd as J, starterSegments as K, mauCap as L, isQualification as M, isSegmentRule as N, isChannel as O, isoToIstInput as P, userPath as Q, parseBehavior as R, frequencyLabel as S, imageFileError as T, seedCampaigns as U, readProcess as V, seedSubscribers as W, tagLabel as X, suggestStart as Y, tokenCounts as Z, ctaHref as _, IOS_EVENTS as a, destinationPath as b, STEPS as c, attributeLabel as d, audienceLabel as f, connectedBehavior as g, chartSeries as h, GOAL_METRICS as i, isLayout as j, isFrequency as k, TAGS as l, behaviorLabel as m, BASE_REACH as n, PERMISSIONS as o, authMiddleware as p, stateLabel as q, FREE_REACH as r, SAMPLE_DISH as s, APP_EVENTS as t, attributeError as u, defaultBehavior as v, imageError as w, formatSchedule as x, describeRule as y, parseInstant as z };

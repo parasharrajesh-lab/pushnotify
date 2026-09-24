@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
+import { AnalyticsView } from "@/components/analytics-view";
 import { ActivityView } from "@/components/activity-view";
 import { BrandView } from "@/components/brand-view";
 import { ConnectView } from "@/components/connect-view";
@@ -19,8 +20,9 @@ import { cn, formatCount } from "@/lib/utils";
 const NAV = [
   { id: "send", label: "Campaigns", right: "send" },
   { id: "segments", label: "Segments", right: "send" },
-  { id: "devices", label: "Devices", right: "devices" },
+  { id: "devices", label: "User path analytics", right: "devices" },
   { id: "activity", label: "Activity", right: "activity" },
+  { id: "analytics", label: "Analytics", right: "activity" },
   { id: "plan", label: "Plan", right: "plan" },
   { id: "team", label: "Team", right: "team" },
   { id: "connect", label: "Connect", right: "connect" },
@@ -126,6 +128,7 @@ export function Shell() {
           {ready && !loadError && businessId && onboarded && view === "segments" ? <SegmentsView /> : null}
           {ready && !loadError && businessId && onboarded && view === "devices" ? <DevicesView /> : null}
           {ready && !loadError && businessId && onboarded && view === "activity" ? <ActivityView /> : null}
+          {ready && !loadError && businessId && onboarded && view === "analytics" ? <AnalyticsView /> : null}
           {ready && !loadError && businessId && onboarded && view === "plan" ? <PlanView /> : null}
           {ready && !loadError && businessId && onboarded && view === "team" ? <TeamView /> : null}
           {ready && !loadError && businessId && onboarded && view === "connect" ? <ConnectView /> : null}

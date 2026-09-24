@@ -2,18 +2,27 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { behaviorSummary, defaultBehavior } from "@/lib/behavior";
-import { TAGS, tagLabel, type Platform, type Tag } from "@/lib/push";
+import { defaultBehavior, permissionLabel, userPath } from "@/lib/behavior";
+import { TAGS, tagLabel, type Platform, type Subscriber, type Tag } from "@/lib/push";
 import { usePush } from "@/lib/push-store";
-import { cn, formatWhen } from "@/lib/utils";
+import { cn, formatCount, formatWhen } from "@/lib/utils";
+
+const PATHS = [
+  { id: "all", label: "All" },
+  { id: "open", label: "Opened the app" },
+  { id: "push", label: "Can receive push" },
+  { id: "tap", label: "Opened a notification" },
+  { id: "return", label: "Returned next day" },
+  { id: "buy", label: "Purchased" },
+] as const;
 
 export function DevicesView() {
   const subscribers = usePush((s) => s.subscribers);
   const addDevice = usePush((s) => s.addDevice);
-  const unregister = usePush((s) => s.unregister);
   const canEdit = usePush((s) => s.rights.includes("devices_edit"));
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState<"all" | Platform>("all");
+  const [step, setStep] = useState<(typeof PATHS)[number]["id"]>("all");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [userId, setUserId] = useState("");
@@ -21,25 +30,28 @@ export function DevicesView() {
   const [nextPlatform, setNextPlatform] = useState<Platform>("android");
   const [tag, setTag] = useState<Tag>("orders");
 
+  const fleet = useMemo(
+    () => subscribers.filter((device) => platform === "all" || device.platform === platform),
+    [subscribers, platform],
+  );
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return subscribers.filter((device) => {
-      if (platform !== "all" && device.platform !== platform) return false;
+    return fleet.filter((device) => {
+      const path = userPath(device.behavior ?? defaultBehavior(device.status));
+      if (step !== "all" && !path.find((item) => item.id === step)?.done) return false;
       if (!q) return true;
-      return (
-        device.name.toLowerCase().includes(q) ||
-        device.userId.toLowerCase().includes(q) ||
-        device.city.toLowerCase().includes(q)
-      );
+      return device.name.toLowerCase().includes(q) || device.userId.toLowerCase().includes(q) || device.city.toLowerCase().includes(q);
     });
-  }, [subscribers, query, platform]);
+  }, [fleet, query, step]);
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-medium tracking-tight">Devices</h1>
-          <p className="pt-1 text-sm text-muted-foreground">A sample of the Metro Bites fleet. Dead tokens drop out of MAU.</p>
+          <h1 className="font-display text-3xl font-medium tracking-tight">User path analytics</h1>
+          <p className="pt-1 max-w-xl text-sm text-muted-foreground">
+            How people move from opening the app to a purchase. Dropping a token is a system owner setting, not a business action.
+          </p>
         </div>
         {canEdit ? (
           <Button variant="outline" onClick={() => setOpen((v) => !v)}>
@@ -47,6 +59,8 @@ export function DevicesView() {
           </Button>
         ) : null}
       </div>
+
+      <Funnel people={fleet} />
 
       {open ? (
         <form
@@ -86,10 +100,7 @@ export function DevicesView() {
                   type="button"
                   aria-pressed={nextPlatform === item}
                   onClick={() => setNextPlatform(item)}
-                  className={cn(
-                    "h-11 rounded-sm px-3 text-sm",
-                    nextPlatform === item ? "bg-primary text-primary-foreground" : "bg-muted",
-                  )}
+                  className={cn("h-11 rounded-sm px-3 text-sm", nextPlatform === item ? "bg-primary text-primary-foreground" : "bg-muted")}
                 >
                   {item === "android" ? "Android" : "iOS"}
                 </button>
@@ -113,21 +124,29 @@ export function DevicesView() {
         </form>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, user, city" aria-label="Search devices" />
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-3">
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, user, city" aria-label="Search people" />
+        <div className="flex flex-wrap gap-2">
           {(["all", "android", "ios"] as const).map((item) => (
             <button
               key={item}
               type="button"
               aria-pressed={platform === item}
               onClick={() => setPlatform(item)}
-              className={cn(
-                "h-11 rounded-sm px-3 text-sm font-medium",
-                platform === item ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
-              )}
+              className={cn("h-11 rounded-sm px-3 text-sm font-medium", platform === item ? "bg-primary text-primary-foreground" : "bg-muted")}
             >
               {item === "all" ? "All" : item === "android" ? "Android" : "iOS"}
+            </button>
+          ))}
+          {PATHS.filter((item) => item.id !== "all").map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={step === item.id}
+              onClick={() => setStep((current) => (current === item.id ? "all" : item.id))}
+              className={cn("h-11 rounded-sm px-3 text-sm font-medium", step === item.id ? "bg-primary text-primary-foreground" : "bg-muted")}
+            >
+              {item.label}
             </button>
           ))}
         </div>
@@ -135,49 +154,67 @@ export function DevicesView() {
 
       <ul className="flex flex-col gap-2">
         {rows.length === 0 ? (
-          <li className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-            No devices match that filter.
-          </li>
+          <li className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">No one matches that path.</li>
         ) : (
-          rows.map((device) => (
-            <li key={device.id} className="rounded-xl border border-border bg-card px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{device.name}</p>
-                  <p className="truncate font-mono text-xs text-muted-foreground">
-                    {device.userId} · {device.city}
-                    {device.pushToken ? ` · token ${device.pushToken.slice(-8)}` : ""}
-                  </p>
+          rows.map((device) => {
+            const behavior = device.behavior ?? defaultBehavior(device.status);
+            const path = userPath(behavior);
+            return (
+              <li key={device.id} className="rounded-xl border border-border bg-card px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{device.name}</p>
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {device.userId} · {device.city} · {device.platform === "android" ? "Android" : "iOS"} · {tagLabel(device.tag)}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{permissionLabel(behavior.permission)}</p>
                 </div>
-                <p className={cn("text-xs font-medium", device.status === "active" ? "text-ok" : "text-danger")}>
-                  {device.status === "active" ? "Active" : "Unregistered"}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 pt-3 text-xs text-muted-foreground">
-                <span className="rounded-sm bg-muted px-2 py-1">{device.platform === "android" ? "Android" : "iOS"}</span>
-                <span className="rounded-sm bg-muted px-2 py-1">{tagLabel(device.tag)}</span>
-                <span>{behaviorSummary(device.behavior ?? defaultBehavior(device.status))}</span>
-                <span className="tabular-nums">{formatWhen(device.lastSeen)}</span>
-                {device.status === "active" && canEdit ? (
-                  <button
-                    type="button"
-                    className="ml-auto h-11 rounded-sm px-2 text-xs font-medium text-danger hover:bg-danger-bg"
-                    onClick={() => {
-                      void (async () => {
-                        const error = await unregister(device.id);
-                        if (error) toast.error(error);
-                        else toast("Token marked unregistered. MAU −1.");
-                      })();
-                    }}
-                  >
-                    Drop token
-                  </button>
-                ) : null}
-              </div>
-            </li>
-          ))
+                <ol className="flex flex-wrap gap-2 pt-3">
+                  {path.map((item) => (
+                    <li
+                      key={item.id}
+                      className={cn(
+                        "rounded-sm px-2 py-1 text-xs font-medium",
+                        item.done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {item.label}
+                    </li>
+                  ))}
+                </ol>
+                <p className="pt-2 text-xs tabular-nums text-muted-foreground">Last seen {formatWhen(device.lastSeen)}</p>
+              </li>
+            );
+          })
         )}
       </ul>
     </div>
+  );
+}
+
+function Funnel({ people }: { people: Subscriber[] }) {
+  const known = people.length;
+  const counts = PATHS.filter((item) => item.id !== "all").map((item) => ({
+    ...item,
+    count: people.filter((device) => userPath(device.behavior ?? defaultBehavior(device.status)).find((step) => step.id === item.id)?.done).length,
+  }));
+  return (
+    <section className="rounded-xl border border-border bg-card p-4" aria-label="Path funnel">
+      <p className="text-sm font-medium">Path · {formatCount(known)} known</p>
+      <ul className="flex flex-col gap-2 pt-3">
+        {counts.map((item) => (
+          <li key={item.id}>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{item.label}</span>
+              <span className="tabular-nums">{formatCount(item.count)}</span>
+            </div>
+            <div className="mt-1 h-2 rounded-sm bg-muted">
+              <div className="h-2 rounded-sm bg-primary" style={{ width: known === 0 ? "0%" : `${Math.round((item.count / known) * 100)}%` }} />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

@@ -1,6 +1,6 @@
 import { r as __exportAll } from "../_runtime.mjs";
 import { t as __exportAll$1 } from "./rolldown-runtime-D7D4PA-g.mjs";
-import { f as getPglite, u as ensureDbReady } from "./owner-access-D4e8lj_h.mjs";
+import { f as getPglite, u as ensureDbReady } from "./owner-access-BUXscoKo.mjs";
 import { $t as generateId, A as email, Bt as ATTR_CONTEXT, C as serializeSignedCookie, D as any, Dt as JWTExpired, F as optional, G as importJWK, Gt as getAuthTables, H as base64Url, Ht as ATTR_OPERATION_ID, I as record, Jt as runWithAdapter, K as jwtVerify, Kt as getCurrentAdapter, L as string, M as looseObject, N as number, O as array, P as object, Qt as initGetFieldName, S as serializeCookie, U as decodeJwt, Ut as import_src, Vt as ATTR_HOOK_TYPE, W as decodeProtectedHeader, Wt as safeJSONParse, Xt as getBetterAuthVersion, Yt as runWithTransaction, Zt as initGetModelName, _ as runWithRequestState, _n as APIError, a as createAuthorizationURL, b as createRouter$1, bn as BASE_ERROR_CODES, c as createRateLimitKey, cn as logger, d as deprecate, dn as env, en as createRandomStringGenerator, f as createAuthEndpoint, g as hasRequestState, gn as isTest, h as defineRequestState, hn as isProduction, ht as encode, i as refreshAccessToken, k as boolean, l as findInvalidTrustedProxies, ln as shouldPublishLog, m as isAPIError, mn as isDevelopment, n as socialProviders, o as applyDefaultAccessTokenExpiry, on as normalizePathname, p as createAuthMiddleware, qt as queueAfterTransactionHook, r as validateAuthorizationCode, rn as betterFetch, s as isLoopbackHost, sn as createLogger, t as SocialProviderListEnum, u as getIp, v as getCurrentAuthContext, vn as BetterAuthError, w as filterOutputFields, x as toResponse, y as runWithEndpointContext, yn as kAPIErrorHeaderSymbol, zt as withSpan } from "../_libs/@better-auth/core+[...].mjs";
 import { a as getOrigin, c as isRequestLike, i as getHost, l as resolveBaseURL, n as PACKAGE_VERSION, o as getProtocol, r as getBaseURL, s as isDynamicBaseURLConfig, t as GENERIC_OAUTH_ERROR_CODES, u as wildcardMatch } from "./url-DwGxbmbA.mjs";
 import { n as defu, t as createDefu } from "../_libs/defu.mjs";
@@ -13,8 +13,8 @@ import { a as utf8ToBytes, i as managedNonce, n as bytesToHex, r as hexToBytes, 
 import { n as string$1, t as boolean$1 } from "../_libs/zod.mjs";
 import { t as Pool } from "../_libs/pg.mjs";
 import { randomBytes } from "node:crypto";
-//#region node_modules/.nitro/vite/services/ssr/assets/server-BWUAkxHl.js
-var server_BWUAkxHl_exports = /* @__PURE__ */ __exportAll({
+//#region node_modules/.nitro/vite/services/ssr/assets/server-DMA1ES5G.js
+var server_DMA1ES5G_exports = /* @__PURE__ */ __exportAll({
 	a: () => gateIdentityEnabled,
 	i: () => hasGateSessionMarker,
 	n: () => authConfigured,
@@ -8889,7 +8889,7 @@ var server_exports = /* @__PURE__ */ __exportAll$1({
 	authConfigured: () => authConfigured
 });
 ensureDbReady().then(async () => {
-	const { seedSystemOwner } = await import("./owner-seed.server-DTlt52Vb.mjs").then((n) => n.t);
+	const { seedSystemOwner } = await import("./owner-seed.server-B2jshYrT.mjs").then((n) => n.t);
 	await seedSystemOwner().catch((error) => {
 		console.error(error);
 	});
@@ -9006,4 +9006,4 @@ var auth = betterAuth({
 	]
 });
 //#endregion
-export { hasGateSessionMarker as a, gateIdentityEnabled as i, auth as n, hashPassword$1 as o, authConfigured as r, server_BWUAkxHl_exports as s, GROK_PROVIDERS as t };
+export { hasGateSessionMarker as a, gateIdentityEnabled as i, auth as n, hashPassword$1 as o, authConfigured as r, server_DMA1ES5G_exports as s, GROK_PROVIDERS as t };

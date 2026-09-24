@@ -21,9 +21,9 @@
       "status": 200,
       "title": "Nock",
       "hasCanvas": false,
-      "bodyTextLen": 0,
-      "bodyTextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "bodyTextPrefix": "",
+      "bodyTextLen": 4,
+      "bodyTextHash": "e13e9a249331c1e19f7005209543d509275e8153b1fa27f9c4e0a9b801c0e503",
+      "bodyTextPrefix": "Nock",
       "horizontalOverflow": false,
       "consoleErrors": [],
       "pageErrors": [],
@@ -38,6 +38,6 @@
   "divergesFromBaseline": true,
   "baselineReasons": [
     "desktop: body text collapsed (742 -> 4 chars)",
-    "mobile: body text collapsed (742 -> 0 chars)"
+    "mobile: body text collapsed (742 -> 4 chars)"
   ]
 }

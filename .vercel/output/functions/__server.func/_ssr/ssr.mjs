@@ -106,7 +106,7 @@ var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 * the dev styles URL for route-scoped CSS collection.
 */
 async function getStartManifest(matchedRoutes) {
-	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-DVMXR3ww.mjs");
+	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-BJCQ8ryv.mjs");
 	const startManifest = tsrStartManifest();
 	let routes = startManifest.routes;
 	routes[rootRouteId];
@@ -128,95 +128,95 @@ async function getStartManifest(matchedRoutes) {
 var manifest = {
 	"00de172fcf2d7e88374caa90a4646f98caaab2cd4392b6ade25ef766a550efa6": {
 		functionName: "setMemberRole_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"025263a4398f7686ad1a3b9438c5581b7e64691e1c44ade746fbee6265ccef87": {
 		functionName: "removeConnection_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"03c65a8338c966a9dd33e50f367f6a8656c6138fb44217a609865aee6301ad85": {
 		functionName: "registerEnterprise_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"08843f162bf4afa2aeb1dd78b86e6ea264e613fdf2621bf1cf305672b4cdd42e": {
 		functionName: "setBusinessPlan_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"189de9d168ac3b924cb0e8f126fb4903cf128e4d5e6dd17aa8a92c52c0891f61": {
 		functionName: "sendPush_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"29d9819c5ef26103ba0f2166991269e5094bd0794a7a693c48810c06527bd393": {
 		functionName: "addDevice_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"39f5411c550fe32045b3f0523f8d78d7b937333f12ae4cad8f2f8a4e0f86d89a": {
 		functionName: "runTest_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"46dce5ca3933ba564633676eb60cf4ffab102aaef92482ff8a97017d798ea755": {
 		functionName: "issueInvoice_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"4e41039d82fa094af5c7e846dfa80a46b758fbc525983fa6c1450a0e45ff0681": {
 		functionName: "dropDevice_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"62f5dc1f092f45c87b3265e464106a7f18432dfd1be6d5bd4c7c1e3c24a9da96": {
 		functionName: "saveSegment_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"66079c67d0af64eb5ec7a4ba89656e49571ba71c3fbf129f8898779e507fc80c": {
 		functionName: "inviteMember_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"6cd9b078c6b114a7009caec8b27ab039e9317d436d6c6215eaa4c86e40be4e85": {
 		functionName: "connectToken_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"7b086128cb6642a772c2c34083e89c1b44849b15de5fa972d254da13be0202a7": {
 		functionName: "removeMember_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"9e73be6c65be06dfccee246ca4c0c4aeb65774348560f66b0270e7a0caa2b90a": {
 		functionName: "addConnection_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"ad9d0a7140bcfe9543b54f4cd1a5f4b28f641264872484121429e6dfa6eb3476": {
 		functionName: "setBusinessGrants_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"be598046bfd5c09c1fb60919bedf47340bd2acc12bf3c5cc2bd2592ce35f442c": {
 		functionName: "completeRegistration_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"bed11b0809ed8a9c990a705979144d05fdec89c865b8ad950ca9e7a6b83237ae": {
 		functionName: "updateBrand_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"df7c190e9e1c60745bd9adaad36f69eb5a9fe0091a6f993d9ace1c25aa1c5c13": {
 		functionName: "resetWorkspace_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"e338c5da8d4e59407e7f8ca5f8237db98428d53f198e62a3e3d64b81d87a1be4": {
 		functionName: "loadAccount_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"e5552f434efd11b3617fca09925282a35e007b5a90625715605904f001a128dc": {
 		functionName: "acceptEnterprise_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"f3a1292298fa23440492ab4c82d59b02fe7df817d2bae528a6d7e23edd66abeb": {
 		functionName: "setOwnPlan_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"f5394ea229d65620f5bebd9c39e368177dc27e9985caa99356338ea24bb68988": {
 		functionName: "setCapPreview_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	},
 	"fd31a23d1feee2ab103a0b8ac5deb1a6dbd3c208813fc9f743bee45a2fb44e21": {
 		functionName: "addBusinessUser_createServerFn_handler",
-		importer: () => import("./account-fns-C-YpIVph.mjs")
+		importer: () => import("./account-fns-DUMSUITs.mjs")
 	}
 };
 async function getServerFnById(id, access) {
@@ -1486,7 +1486,7 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
 	const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-		import("./router-fIxzlrKE.mjs").then((n) => n.t),
+		import("./router-C8SmBa4Q.mjs").then((n) => n.t),
 		import("./start-5Z2QO8AU.mjs"),
 		import("./empty-plugin-adapters-D9UWiqvJ.mjs")
 	]);

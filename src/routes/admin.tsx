@@ -101,7 +101,7 @@ function AdminGate() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4">
         <div>
           <p className="font-display text-2xl font-medium">Nock</p>
-          <p className="text-sm text-muted-foreground">System owner</p>
+          <p className="text-sm text-muted-foreground">System management</p>
         </div>
         <div className="flex items-center gap-3">
           <a href="/" className="text-sm font-medium underline">

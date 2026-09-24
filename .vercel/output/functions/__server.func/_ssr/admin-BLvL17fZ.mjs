@@ -1,11 +1,11 @@
 import { o as __toESM } from "../_runtime.mjs";
 import { B as require_react, b as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
-import { _ as nextPlan, b as quoteUsage, d as formatInr, i as PLAN_RATES, x as runLogicChecks, y as planLabel } from "./owner-access-D4e8lj_h.mjs";
-import { d as formatCount, n as Input, s as cn, t as Button } from "./account-fns-DfB75Ss1.mjs";
-import { i as usePush, n as UserButton, r as useCurrentUserState } from "./gates-BuKxug9q.mjs";
+import { _ as nextPlan, b as quoteUsage, d as formatInr, i as PLAN_RATES, x as runLogicChecks, y as planLabel } from "./owner-access-BUXscoKo.mjs";
+import { d as formatCount, n as Input, s as cn, t as Button } from "./account-fns-DRPJC4Eu.mjs";
+import { i as usePush, n as UserButton, r as useCurrentUserState } from "./gates-BXTl_cYB.mjs";
 import { t as emailSignIn } from "./email-session-CMHsUb3L.mjs";
 import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin-DsfkxAMB.js
+//#region node_modules/.nitro/vite/services/ssr/assets/admin-BLvL17fZ.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var CHECKS = runLogicChecks();
@@ -16,6 +16,8 @@ function AdminPanel() {
 	const registerEnterprise = usePush((s) => s.registerEnterprise);
 	const changeBusinessPlan = usePush((s) => s.changeBusinessPlan);
 	const setGrants = usePush((s) => s.setGrants);
+	const dropToken = usePush((s) => s.dropToken);
+	const tokens = usePush((s) => s.tokens);
 	const issueBill = usePush((s) => s.issueBill);
 	const paymentEvents = usePush((s) => s.paymentEvents);
 	const webhookSecrets = usePush((s) => s.webhookSecrets);
@@ -73,6 +75,57 @@ function AdminPanel() {
 					})
 				})
 			] }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "flex flex-col gap-2",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						className: "text-sm font-medium",
+						children: "System settings"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-muted-foreground",
+						children: "Dropping a token is only done here. The device leaves that workspace's MAU and can no longer receive push. A business user cannot drop one."
+					}),
+					tokens.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-muted-foreground",
+						children: "No active device is waiting."
+					}) : null,
+					tokens.map((token) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+						className: "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "min-w-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "font-medium",
+								children: token.name
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "truncate text-sm text-muted-foreground",
+								children: [
+									token.businessName,
+									" · ",
+									token.userId,
+									" · ",
+									token.platform === "ios" ? "iOS" : "Android",
+									token.tokenTail ? ` · token ${token.tokenTail}` : " · no token saved"
+								]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: "h-11 rounded-sm px-3 text-sm font-medium text-danger hover:bg-danger-bg",
+							onClick: () => {
+								(async () => {
+									const error = await dropToken({
+										businessId: token.businessId,
+										deviceId: token.id
+									});
+									if (error) toast.error(error);
+									else toast("Token dropped. That device left MAU.");
+								})();
+							},
+							children: "Drop token"
+						})]
+					}, token.id))
+				]
+			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
 				className: "flex flex-col gap-3 rounded-xl border border-border bg-card p-4",
 				onSubmit: (event) => {

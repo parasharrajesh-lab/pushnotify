@@ -1,6 +1,7 @@
 import { isPlan, type PlanId } from "@/lib/account-types";
 import { periodLabel } from "@/lib/billing";
 import { getSql, type Sql } from "@/lib/db";
+import { writeSystemLog } from "@/lib/system-log";
 import {
   DEMO_SKYDO_SECRET,
   DEMO_STRIPE_SECRET,
@@ -66,6 +67,12 @@ async function applyDecision(sql: Sql, provider: "stripe" | "skydo", decision: P
     `;
   }
   await record(sql, provider, decision, "applied", decision.plan ? `Plan set to ${decision.plan}.` : "Billing state updated.");
+  await writeSystemLog(sql, {
+    actorId: "gateway",
+    action: "Payment applied",
+    businessId: business.id,
+    detail: `${provider} · ${decision.email} · ${decision.plan ?? decision.billingState ?? "updated"}.`,
+  });
   return { received: true, matched: true };
 }
 
@@ -152,6 +159,11 @@ export async function writeWebhookSettings(input: { stripeSecret: string; skydoS
     update platform_settings set stripe_secret = ${input.stripeSecret}, skydo_secret = ${input.skydoSecret}
     where id = 'default'
   `;
+  await writeSystemLog(sql, {
+    actorId: "owner",
+    action: "Payment gateway",
+    detail: "Stripe and Skydo signing secrets were replaced. The values are not stored in the log.",
+  });
 }
 
 export function assertPlan(value: string): value is PlanId {

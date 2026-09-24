@@ -34,6 +34,7 @@ import {
 } from "@/lib/behavior";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql, type Sql } from "@/lib/db";
+import { writeSystemLog } from "@/lib/system-log";
 import { DEMO_SKYDO_SECRET, DEMO_STRIPE_SECRET } from "@/lib/owner-access";
 import {
   BASE_REACH,
@@ -561,6 +562,8 @@ async function accountFor(sql: Sql, userId: string): Promise<AccountPayload> {
     ];
   }
   let businesses: BusinessListRow[] = [];
+  let tokens: AccountPayload["tokens"] = [];
+  let logs: AccountPayload["logs"] = [];
   let seats: SeatRow[] = [];
   let invoices: AccountPayload["invoices"] = [];
   let paymentEvents: AccountPayload["paymentEvents"] = [];
@@ -684,6 +687,8 @@ async function accountFor(sql: Sql, userId: string): Promise<AccountPayload> {
       status: row.status,
       detail: row.detail,
     }));
+    tokens = await loadOwnerTokens(sql);
+    logs = await loadSystemLogs(sql);
   }
   return {
     isSystemAdmin: admin,
@@ -693,11 +698,63 @@ async function accountFor(sql: Sql, userId: string): Promise<AccountPayload> {
     members,
     seats,
     businesses,
+    tokens,
+    logs,
     business,
     invoices,
     paymentEvents,
     webhookSecrets,
   };
+}
+
+async function loadOwnerTokens(sql: Sql) {
+  const rows = await sql<{
+    id: string;
+    business_id: string;
+    business_name: string;
+    name: string;
+    external_user_id: string;
+    platform: string;
+    push_token: string;
+  }>`
+    select s.id, s.business_id, b.name as business_name, s.name, s.external_user_id, s.platform, s.push_token
+    from subscribers s
+    join businesses b on b.id = s.business_id
+    where s.status = 'active'
+    order by b.name, s.name
+  `;
+  return rows.map((row) => ({
+    id: row.id,
+    businessId: row.business_id,
+    businessName: row.business_name,
+    name: row.name,
+    userId: row.external_user_id,
+    platform: row.platform === "ios" ? "ios" as const : "android" as const,
+    tokenTail: row.push_token ? row.push_token.slice(-8) : "",
+  }));
+}
+
+async function loadSystemLogs(sql: Sql) {
+  const rows = await sql<{
+    id: string;
+    action: string;
+    detail: string;
+    created_at: unknown;
+    business_name: string | null;
+  }>`
+    select l.id, l.action, l.detail, l.created_at, b.name as business_name
+    from system_logs l
+    left join businesses b on b.id = l.business_id
+    order by l.created_at desc
+    limit 40
+  `;
+  return rows.map((row) => ({
+    id: row.id,
+    action: row.action,
+    businessName: row.business_name ?? "",
+    detail: row.detail,
+    createdAt: iso(row.created_at),
+  }));
 }
 
 async function requireRight(sql: Sql, userId: string, right: string) {
@@ -878,27 +935,34 @@ export const addDevice = createServerFn({ method: "POST" })
 
 export const dropDevice = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((id: string) => {
-    const value = (id ?? "").trim();
-    if (!value) throw new Error("Missing device.");
-    return value;
+  .validator((input: { businessId: string; deviceId: string }) => {
+    const businessId = (input?.businessId ?? "").trim();
+    const deviceId = (input?.deviceId ?? "").trim();
+    if (!businessId || !deviceId) throw new Error("Choose a token.");
+    return { businessId, deviceId };
   })
-  .handler(async ({ context, data: id }) => {
+  .handler(async ({ context, data }) => {
     const sql = await getSql();
-    const member = await requireRight(sql, context.userId, "devices_edit");
-    const current = await slice(sql, member.businessId);
+    if (!(await isAdmin(sql, context.userId))) throw new Error("Only the system owner can drop a token.");
+    const current = await slice(sql, data.businessId);
     if (!current) throw new Error("Workspace missing.");
-    const device = current.subscribers.find((item) => item.id === id && item.status === "active");
+    const device = current.subscribers.find((item) => item.id === data.deviceId && item.status === "active");
     if (!device) throw new Error("That token is already dropped.");
     const reach = cloneReach(current.reach);
     reach[device.platform][device.tag] = Math.max(0, reach[device.platform][device.tag] - 1);
     await sql`
       update subscribers set status = 'unregistered', behavior = ${JSON.stringify({ ...device.behavior, permission: "denied" })}
-      where id = ${id} and business_id = ${current.id}
+      where id = ${data.deviceId} and business_id = ${current.id}
     `;
     await sql`
       update businesses set mau = ${Math.max(0, current.mau - 1)}, reach = ${JSON.stringify(reach)} where id = ${current.id}
     `;
+    await writeSystemLog(sql, {
+      actorId: context.userId,
+      action: "Token dropped",
+      businessId: current.id,
+      detail: `${device.name} · ${device.platform}. The device left MAU.`,
+    });
     return accountFor(sql, context.userId);
   });
 
@@ -1115,6 +1179,7 @@ export const setBusinessPlan = createServerFn({ method: "POST" })
     const sql = await getSql();
     if (!(await isAdmin(sql, context.userId))) throw new Error("System rights are required.");
     await sql`update businesses set plan = ${data.plan} where id = ${data.id}`;
+    await writeSystemLog(sql, { actorId: context.userId, action: "Plan changed", businessId: data.id, detail: `Plan set to ${data.plan}.` });
     return accountFor(sql, context.userId);
   });
 
@@ -1143,6 +1208,12 @@ export const setBusinessGrants = createServerFn({ method: "POST" })
       update businesses set grant_sdk = ${data.sdk}, grant_webhook = ${data.webhook}, grant_test = ${data.test}
       where id = ${data.id}
     `;
+    await writeSystemLog(sql, {
+      actorId: context.userId,
+      action: "System settings",
+      businessId: data.id,
+      detail: `SDK ${data.sdk ? "on" : "off"}, webhook ${data.webhook ? "on" : "off"}, test run ${data.test ? "on" : "off"}.`,
+    });
     return accountFor(sql, context.userId);
   });
 
@@ -1296,6 +1367,11 @@ export const registerEnterprise = createServerFn({ method: "POST" })
         on conflict (email) do update set business_name = ${data.businessName}, plan = ${data.plan}, kind = 'enterprise'
       `;
     }
+    await writeSystemLog(sql, {
+      actorId: context.userId,
+      action: "Enterprise registered",
+      detail: `${data.businessName} · ${data.email} · ${data.plan}. Billing starts after they accept.`,
+    });
     return accountFor(sql, context.userId);
   });
 
@@ -1307,6 +1383,12 @@ export const acceptEnterprise = createServerFn({ method: "POST" })
     const current = await slice(sql, member.businessId);
     if (!current || current.kind !== "enterprise") throw new Error("This workspace is not an enterprise.");
     await sql`update businesses set onboarded = true where id = ${current.id}`;
+    await writeSystemLog(sql, {
+      actorId: context.userId,
+      action: "Enterprise accepted",
+      businessId: current.id,
+      detail: `${current.name} accepted pay-per-use on ${current.plan}.`,
+    });
     return accountFor(sql, context.userId);
   });
 
@@ -1337,6 +1419,12 @@ export const issueInvoice = createServerFn({ method: "POST" })
         ${quote.basePaise}, ${quote.overagePaise}, ${quote.totalPaise}, 'issued'
       )
     `;
+    await writeSystemLog(sql, {
+      actorId: context.userId,
+      action: "Invoice issued",
+      businessId: current.id,
+      detail: `${label} · ${current.plan} · ${quote.mau} MAU.`,
+    });
     return accountFor(sql, context.userId);
   });
 
