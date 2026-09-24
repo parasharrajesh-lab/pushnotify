@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/owner-access-DOLxBY6A.js
+//#region node_modules/.nitro/vite/services/ssr/assets/owner-access-gxEwVfLU.js
 var ROLES = [
 	"owner",
 	"developer",
@@ -345,6 +345,7 @@ var _0003_connect_default = "alter table businesses add column if not exists gra
 var _0004_billing_default = "alter table businesses add column if not exists kind text not null default 'self';\nalter table businesses add column if not exists billing text not null default 'recorded';\nalter table businesses add column if not exists onboarded boolean not null default true;\n\nalter table business_seats add column if not exists kind text not null default 'self';\n\nalter table subscribers add column if not exists push_token text not null default '';\n\ncreate table if not exists invoices (\n  id text primary key,\n  business_id text not null references businesses (id) on delete cascade,\n  period_label text not null,\n  plan text not null,\n  mau integer not null,\n  included_mau integer not null,\n  base_paise integer not null,\n  overage_paise integer not null,\n  total_paise integer not null,\n  status text not null default 'issued',\n  created_at timestamptz not null default now(),\n  unique (business_id, period_label)\n);\n\ncreate index if not exists invoices_business_idx on invoices (business_id);\n";
 var _0005_payments_default = "alter table businesses add column if not exists billing_state text not null default 'active';\n\ncreate table if not exists platform_settings (\n  id text primary key,\n  stripe_secret text not null,\n  skydo_secret text not null\n);\n\ncreate table if not exists payment_events (\n  id text primary key,\n  provider text not null,\n  event_id text not null,\n  event_type text not null,\n  email text not null default '',\n  plan text not null default '',\n  amount_paise integer not null default 0,\n  status text not null,\n  detail text not null default '',\n  created_at timestamptz not null default now(),\n  unique (provider, event_id)\n);\n";
 var _0006_password_reset_default = "create table if not exists password_resets (\n  id text primary key,\n  user_id text not null,\n  email text not null,\n  code_hash text not null,\n  attempts integer not null default 0,\n  expires_at timestamptz not null,\n  used_at timestamptz,\n  created_at timestamptz not null default now()\n);\n\ncreate index if not exists password_resets_email_idx on password_resets (email);\n";
+var _0007_campaign_process_default = "alter table campaigns add column if not exists process text not null default '';\n";
 /**
 * Migration bookkeeping shared by the two appliers — `scripts/migrate.mjs`
 * (deploy, `readdir`) and `src/lib/db.ts` (PGLite preview, `import.meta.glob`).
@@ -468,7 +469,8 @@ async function createPgliteSql() {
 			"/migrations/0003_connect.sql": _0003_connect_default,
 			"/migrations/0004_billing.sql": _0004_billing_default,
 			"/migrations/0005_payments.sql": _0005_payments_default,
-			"/migrations/0006_password_reset.sql": _0006_password_reset_default
+			"/migrations/0006_password_reset.sql": _0006_password_reset_default,
+			"/migrations/0007_campaign_process.sql": _0007_campaign_process_default
 		});
 		const done = (await pg.query("select name from _migrations")).rows.map((r) => r.name);
 		for (const { name, path } of pendingMigrations(Object.keys(migrations), done)) await pg.transaction(async (tx) => {

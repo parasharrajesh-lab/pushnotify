@@ -1,6 +1,6 @@
 import { t as __exportAll } from "./rolldown-runtime-D7D4PA-g.mjs";
-import { p as getSql } from "./owner-access-DOLxBY6A.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/owner-seed.server-CljaPCh_.js
+import { p as getSql } from "./owner-access-gxEwVfLU.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/owner-seed.server-tJGOL_w_.js
 /** Server-only. Never import this from a component or other client module. */
 var SYSTEM_OWNER = {
 	email: "owner@nock.app",
@@ -17,7 +17,7 @@ function seedSystemOwner() {
 	return pending;
 }
 async function run() {
-	const { auth } = await import("./server-CCpuExkQ.mjs").then((n) => n.s).then((n) => n.r);
+	const { auth } = await import("./server-BZSG3nVm.mjs").then((n) => n.s).then((n) => n.r);
 	const sql = await getSql();
 	if (!(await sql`select id from "user" where lower(email) = ${SYSTEM_OWNER.email} limit 1`)[0]) await auth.api.signUpEmail({
 		body: {

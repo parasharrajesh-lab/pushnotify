@@ -38,7 +38,8 @@ import {
   type Role,
   type SeatRow,
 } from "@/lib/account-types";
-import { BASE_REACH, mauCap, type Audience, type Campaign, type Platform, type Reach, type Subscriber, type Tag } from "@/lib/push";
+import { BASE_REACH, mauCap, type Campaign, type Platform, type Reach, type Subscriber, type Tag } from "@/lib/push";
+import type { CampaignDraft } from "@/lib/notify";
 import type { BillingMode, BillingState, WebhookSecrets, WorkspaceKind } from "@/lib/account-types";
 
 type PushState = {
@@ -72,7 +73,7 @@ type PushState = {
   paymentEvents: PaymentEventRow[];
   webhookSecrets: WebhookSecrets;
   load: () => Promise<void>;
-  send: (input: { title: string; body: string; link: string; image: string; video: string; audience: Audience }) => Promise<string | null>;
+  send: (input: CampaignDraft) => Promise<string | null>;
   addDevice: (input: { name: string; userId: string; platform: Platform; city: string; tag: Tag }) => Promise<string | null>;
   unregister: (id: string) => Promise<string | null>;
   setOverCap: (on: boolean) => Promise<string | null>;

@@ -1,12 +1,12 @@
 import { o as __toESM } from "../_runtime.mjs";
 import { B as require_react, b as require_jsx_runtime, v as Navigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { a as RIGHTS, r as EMPTY_GRANTS } from "./owner-access-DOLxBY6A.mjs";
-import { l as mauCap, t as BASE_REACH } from "./push-RHVUTltL.mjs";
-import { C as setBusinessPlan, D as updateBrand, E as setOwnPlan, S as setBusinessGrants, T as setMemberRole, _ as removeConnection, a as addConnection, b as runTest, g as registerEnterprise, h as loadAccount, i as addBusinessUser, l as connectToken, m as issueInvoice, o as addDevice, p as inviteMember, r as acceptEnterprise, u as dropDevice, v as removeMember, w as setCapPreview, x as sendPush, y as resetWorkspace } from "./account-fns-l6XAJPsf.mjs";
+import { a as RIGHTS, r as EMPTY_GRANTS } from "./owner-access-gxEwVfLU.mjs";
+import { p as mauCap, t as BASE_REACH } from "./middleware-fDVXmQad.mjs";
+import { C as setBusinessPlan, D as updateBrand, E as setOwnPlan, S as setBusinessGrants, T as setMemberRole, _ as removeConnection, a as addConnection, b as runTest, g as registerEnterprise, h as loadAccount, i as addBusinessUser, l as connectToken, m as issueInvoice, o as addDevice, p as inviteMember, r as acceptEnterprise, u as dropDevice, v as removeMember, w as setCapPreview, x as sendPush, y as resetWorkspace } from "./account-fns-7GP3bSk7.mjs";
 import { i as signOut, t as authClient } from "./client-CVqXY6bk.mjs";
-import { a as hasGateSessionMarker } from "./server-CCpuExkQ.mjs";
+import { a as hasGateSessionMarker } from "./server-BZSG3nVm.mjs";
 import { t as create } from "../_libs/zustand.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/gates-BX8gSWXJ.js
+//#region node_modules/.nitro/vite/services/ssr/assets/gates-CN0gzG2z.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function fromAccount(account) {

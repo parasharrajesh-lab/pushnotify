@@ -1,10 +1,10 @@
 import { b as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { a as getServerFnById, i as TSS_SERVER_FUNCTION, r as createServerFn } from "./ssr.mjs";
-import { g as isRole, h as isPlan, l as checkPushToken } from "./owner-access-DOLxBY6A.mjs";
-import { c as isAudience, o as authMiddleware, r as TAGS } from "./push-RHVUTltL.mjs";
+import { g as isRole, h as isPlan, l as checkPushToken } from "./owner-access-gxEwVfLU.mjs";
+import { d as isLayout, f as isQualification, i as TAGS, l as isAudience, s as authMiddleware, u as isChannel } from "./middleware-fDVXmQad.mjs";
 import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-l6XAJPsf.js
+//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-7GP3bSk7.js
 var import_jsx_runtime = require_jsx_runtime();
 function cn(...inputs) {
 	return twMerge(clsx(inputs));
@@ -120,6 +120,31 @@ function cleanVideo(value) {
 	if (url.toString().length > 500) throw new Error("That video link is too long.");
 	return url.toString();
 }
+function cleanDraft(input) {
+	if (!input || !isChannel(input.channel) || !isQualification(input.qualification) || !isLayout(input.layout)) throw new Error("Choose a push or an in-app campaign.");
+	if (!isAudience(input.audience)) throw new Error("Choose an audience.");
+	if (input.delivery !== "now" && input.delivery !== "later") throw new Error("Choose when to send.");
+	const ttlHours = Math.round(Number(input.ttlHours));
+	const delaySeconds = Math.round(Number(input.delaySeconds));
+	if (!Number.isFinite(ttlHours) || !Number.isFinite(delaySeconds)) throw new Error("Check the delivery window.");
+	return {
+		channel: input.channel,
+		qualification: input.qualification,
+		layout: input.channel === "push" ? "lock" : input.layout,
+		audience: input.audience,
+		title: (input.title ?? "").trim(),
+		body: (input.body ?? "").trim(),
+		link: cleanLink(input.link ?? ""),
+		image: cleanImage(input.image ?? ""),
+		video: cleanVideo(input.video ?? ""),
+		button: (input.button ?? "").trim().slice(0, 24),
+		delivery: input.delivery,
+		ttlHours,
+		delaySeconds,
+		quietHours: Boolean(input.quietHours),
+		goal: (input.goal ?? "").trim().slice(0, 80)
+	};
+}
 var loadAccount = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(createSsrRpc("e338c5da8d4e59407e7f8ca5f8237db98428d53f198e62a3e3d64b81d87a1be4"));
 var completeRegistration = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
 	if (!input || !isPlan(input.plan)) throw new Error("Choose Free, Basic, or Advance.");
@@ -128,21 +153,7 @@ var completeRegistration = createServerFn({ method: "POST" }).middleware([authMi
 		plan: input.plan
 	};
 }).handler(createSsrRpc("be598046bfd5c09c1fb60919bedf47340bd2acc12bf3c5cc2bd2592ce35f442c"));
-var sendPush = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
-	const title = (input?.title ?? "").trim();
-	const body = (input?.body ?? "").trim();
-	if (!title || title.length > 65) throw new Error("Title is required, up to 65 characters.");
-	if (!body || body.length > 180) throw new Error("Message is required, up to 180 characters.");
-	if (!isAudience(input?.audience)) throw new Error("Choose an audience.");
-	return {
-		title,
-		body,
-		link: cleanLink(input.link ?? ""),
-		image: cleanImage(input.image ?? ""),
-		video: cleanVideo(input.video ?? ""),
-		audience: input.audience
-	};
-}).handler(createSsrRpc("189de9d168ac3b924cb0e8f126fb4903cf128e4d5e6dd17aa8a92c52c0891f61"));
+var sendPush = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => cleanDraft(input)).handler(createSsrRpc("189de9d168ac3b924cb0e8f126fb4903cf128e4d5e6dd17aa8a92c52c0891f61"));
 var addDevice = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
 	if (input?.platform !== "android" && input?.platform !== "ios") throw new Error("Choose Android or iOS.");
 	if (!TAGS.includes(input?.tag)) throw new Error("Choose a tag.");

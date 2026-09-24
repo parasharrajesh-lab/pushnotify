@@ -16,7 +16,7 @@ import { usePush } from "@/lib/push-store";
 import { cn, formatCount } from "@/lib/utils";
 
 const NAV = [
-  { id: "send", label: "Send", right: "send" },
+  { id: "send", label: "Campaigns", right: "send" },
   { id: "devices", label: "Devices", right: "devices" },
   { id: "activity", label: "Activity", right: "activity" },
   { id: "plan", label: "Plan", right: "plan" },

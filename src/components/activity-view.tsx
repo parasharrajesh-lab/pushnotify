@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Phone } from "@/components/phone";
 import { audienceLabel, type Campaign, type Platform } from "@/lib/push";
+import { stateLabel } from "@/lib/notify";
 import { usePush } from "@/lib/push-store";
 import { cn, formatCount, formatWhen } from "@/lib/utils";
 
@@ -39,6 +40,8 @@ export function ActivityView() {
             appName={appName}
             logo={logo}
             pulse={0}
+            surface={current.channel === "inapp" ? (current.layout ?? "banner") : "lock"}
+            button={current.button}
             onPlatform={setPreview}
           />
         ) : (
@@ -66,7 +69,10 @@ function CampaignRow({ campaign, on, onSelect }: { campaign: Campaign; on: boole
         <p className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatWhen(campaign.createdAt)}</p>
       </div>
       <p className="pt-1 text-sm text-muted-foreground">
+        {campaign.channel === "inapp" ? "In-app" : "Push"}
+        {" · "}
         {campaign.isTest ? `Test run · ${campaign.testLabel || "Connection"}` : audienceLabel(campaign.audience)}
+        {campaign.deliveryState && campaign.deliveryState !== "sent" ? ` · ${stateLabel(campaign.deliveryState)}` : ""}
       </p>
       <p className="pt-2 text-xs tabular-nums text-muted-foreground">
         {formatCount(campaign.delivered)} delivered · {formatCount(campaign.failed)} failed · {formatCount(campaign.clicked)} clicked · {rate}%

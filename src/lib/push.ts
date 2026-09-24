@@ -38,6 +38,10 @@ export type Campaign = {
   seed: boolean;
   isTest?: boolean;
   testLabel?: string;
+  channel?: "push" | "inapp";
+  layout?: "lock" | "banner" | "modal" | "primer";
+  deliveryState?: "sent" | "queued" | "scheduled" | "armed";
+  button?: string;
 };
 
 export type Reach = Record<Platform, Record<Tag, number>>;

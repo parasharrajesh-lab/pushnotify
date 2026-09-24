@@ -16,16 +16,14 @@ import {
   type SeatRow,
 } from "@/lib/account-types";
 import { checkPushToken, invitesAllowed, periodLabel, quoteUsage, sendsAllowed } from "@/lib/billing";
+import { isChannel, isLayout, isQualification, readProcess, reviewCampaign, type CampaignDraft } from "@/lib/notify";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql, type Sql } from "@/lib/db";
 import { DEMO_SKYDO_SECRET, DEMO_STRIPE_SECRET } from "@/lib/owner-access";
 import {
-  audienceSize,
   BASE_REACH,
   FREE_REACH,
   isAudience,
-  projectDelivery,
-  saltFrom,
   seedCampaigns,
   seedSubscribers,
   TAGS,
@@ -108,6 +106,45 @@ function cleanVideo(value: string) {
   if (url.protocol !== "https:") throw new Error("Video links must use https.");
   if (url.toString().length > 500) throw new Error("That video link is too long.");
   return url.toString();
+}
+
+function cleanDraft(input: CampaignDraft): CampaignDraft {
+  if (!input || !isChannel(input.channel) || !isQualification(input.qualification) || !isLayout(input.layout)) {
+    throw new Error("Choose a push or an in-app campaign.");
+  }
+  if (!isAudience(input.audience)) throw new Error("Choose an audience.");
+  if (input.delivery !== "now" && input.delivery !== "later") throw new Error("Choose when to send.");
+  const ttlHours = Math.round(Number(input.ttlHours));
+  const delaySeconds = Math.round(Number(input.delaySeconds));
+  if (!Number.isFinite(ttlHours) || !Number.isFinite(delaySeconds)) throw new Error("Check the delivery window.");
+  return {
+    channel: input.channel,
+    qualification: input.qualification,
+    layout: input.channel === "push" ? "lock" : input.layout,
+    audience: input.audience,
+    title: (input.title ?? "").trim(),
+    body: (input.body ?? "").trim(),
+    link: cleanLink(input.link ?? ""),
+    image: cleanImage(input.image ?? ""),
+    video: cleanVideo(input.video ?? ""),
+    button: (input.button ?? "").trim().slice(0, 24),
+    delivery: input.delivery,
+    ttlHours,
+    delaySeconds,
+    quietHours: Boolean(input.quietHours),
+    goal: (input.goal ?? "").trim().slice(0, 80),
+  };
+}
+
+function campaignProcess(raw: string) {
+  const parsed = readProcess(raw);
+  if (!parsed) return {};
+  return {
+    channel: parsed.channel,
+    layout: parsed.layout,
+    deliveryState: parsed.state,
+    button: parsed.button,
+  };
 }
 
 async function userRow(sql: Sql, userId: string) {
@@ -285,9 +322,10 @@ async function slice(sql: Sql, businessId: string): Promise<BusinessSlice | null
     seed: boolean;
     is_test: boolean;
     test_label: string;
+    process: string;
     created_at: unknown;
   }>`
-    select id, title, body, link, image_url, video_url, audience, targeted, delivered, failed, clicked, seed, is_test, test_label, created_at
+    select id, title, body, link, image_url, video_url, audience, targeted, delivered, failed, clicked, seed, is_test, test_label, process, created_at
     from campaigns where business_id = ${businessId}
     order by created_at desc
   `;
@@ -326,6 +364,7 @@ async function slice(sql: Sql, businessId: string): Promise<BusinessSlice | null
       seed: row.seed,
       isTest: Boolean(row.is_test),
       testLabel: row.test_label,
+      ...campaignProcess(row.process),
     };
   });
   const linkRows = await sql<{
@@ -630,26 +669,24 @@ export const completeRegistration = createServerFn({ method: "POST" })
 
 export const sendPush = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { title: string; body: string; link: string; image: string; video: string; audience: Audience }) => {
-    const title = (input?.title ?? "").trim();
-    const body = (input?.body ?? "").trim();
-    if (!title || title.length > 65) throw new Error("Title is required, up to 65 characters.");
-    if (!body || body.length > 180) throw new Error("Message is required, up to 180 characters.");
-    if (!isAudience(input?.audience)) throw new Error("Choose an audience.");
-    return {
-      title,
-      body,
-      link: cleanLink(input.link ?? ""),
-      image: cleanImage(input.image ?? ""),
-      video: cleanVideo(input.video ?? ""),
-      audience: input.audience,
-    };
-  })
+  .validator((input: CampaignDraft) => cleanDraft(input))
   .handler(async ({ context, data }) => {
     const sql = await getSql();
     const member = await requireRight(sql, context.userId, "send");
     const current = await slice(sql, member.businessId);
     if (!current) throw new Error("Workspace missing.");
+    const reviewed = reviewCampaign({
+      draft: data,
+      reach: current.reach,
+      devices: current.subscribers.map((device) => ({
+        platform: device.platform,
+        tag: device.tag,
+        status: device.status,
+        pushToken: device.pushToken,
+      })),
+      plan: current.plan,
+    });
+    if (reviewed.error) throw new Error(reviewed.error);
     const blocked = sendsAllowed({
       plan: current.plan,
       mau: current.mau,
@@ -660,17 +697,27 @@ export const sendPush = createServerFn({ method: "POST" })
       billingState: current.billingState,
     });
     if (blocked) throw new Error(blocked);
-    const targeted = audienceSize(current.reach, data.audience);
-    if (targeted <= 0) throw new Error("No reachable devices in that audience.");
-    const stats = projectDelivery(targeted, saltFrom(data.title));
     const id = crypto.randomUUID();
+    const process = JSON.stringify({
+      channel: data.channel,
+      qualification: data.qualification,
+      layout: data.layout,
+      delivery: data.delivery,
+      ttlHours: data.ttlHours,
+      delaySeconds: data.delaySeconds,
+      quietHours: data.quietHours,
+      button: data.button,
+      goal: data.goal,
+      state: reviewed.state,
+    });
     await sql`
       insert into campaigns (
         id, business_id, title, body, link, image_url, video_url, audience,
-        targeted, delivered, failed, clicked, seed
+        targeted, delivered, failed, clicked, seed, process
       ) values (
         ${id}, ${current.id}, ${data.title}, ${data.body}, ${data.link}, ${data.image}, ${data.video},
-        ${JSON.stringify(data.audience)}, ${stats.targeted}, ${stats.delivered}, ${stats.failed}, ${stats.clicked}, false
+        ${JSON.stringify(data.audience)}, ${reviewed.stats.targeted}, ${reviewed.stats.delivered},
+        ${reviewed.stats.failed}, ${reviewed.stats.clicked}, false, ${process}
       )
     `;
     return accountFor(sql, context.userId);

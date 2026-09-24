@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-B6s65G41.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-Beaxo3yu.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "/workspace/src/routes/__root.tsx",
@@ -14,29 +14,29 @@ var tsrStartManifest = () => ({ routes: {
 			"/api/webhooks/skydo",
 			"/api/webhooks/stripe"
 		],
-		preloads: ["/assets/index-DtKjVKza.js", "/assets/react-SIfiwpqq.js"],
+		preloads: ["/assets/index-DLm9qbJA.js", "/assets/react-SIfiwpqq.js"],
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-DtKjVKza.js"
+			src: "/assets/index-DLm9qbJA.js"
 		} }]
 	},
 	"/": {
 		filePath: "/workspace/src/routes/index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/routes-PM9THI5U.js",
-			"/assets/account-fns-B75YeEKk.js",
-			"/assets/gates-DmVJtIoT.js"
+			"/assets/routes-C7wHNwyW.js",
+			"/assets/account-fns-ZNFk3Uwc.js",
+			"/assets/gates-CgvXW0NR.js"
 		]
 	},
 	"/admin": {
 		filePath: "/workspace/src/routes/admin.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin-ndru6vkC.js",
-			"/assets/account-fns-B75YeEKk.js",
-			"/assets/gates-DmVJtIoT.js",
+			"/assets/admin-BzGqH6AT.js",
+			"/assets/account-fns-ZNFk3Uwc.js",
+			"/assets/gates-CgvXW0NR.js",
 			"/assets/email-session-DIlUXca6.js"
 		]
 	},
@@ -44,8 +44,8 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/workspace/src/routes/login.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/login-DXgFojhV.js",
-			"/assets/account-fns-B75YeEKk.js",
+			"/assets/login-BZYLz8D1.js",
+			"/assets/account-fns-ZNFk3Uwc.js",
 			"/assets/client-C85fcJ4s.js",
 			"/assets/email-session-DIlUXca6.js"
 		]

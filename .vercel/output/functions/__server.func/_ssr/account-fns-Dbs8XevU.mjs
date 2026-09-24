@@ -1,7 +1,7 @@
 import { i as TSS_SERVER_FUNCTION, r as createServerFn } from "./ssr.mjs";
-import { S as sendsAllowed, a as RIGHTS, b as quoteUsage, g as isRole, h as isPlan, l as checkPushToken, m as invitesAllowed, n as DEMO_STRIPE_SECRET, p as getSql, t as DEMO_SKYDO_SECRET, v as periodLabel } from "./owner-access-DOLxBY6A.mjs";
-import { a as audienceSize, c as isAudience, d as saltFrom, f as seedCampaigns, n as FREE_REACH, o as authMiddleware, p as seedSubscribers, r as TAGS, t as BASE_REACH, u as projectDelivery } from "./push-RHVUTltL.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-Bw4lRAqj.js
+import { S as sendsAllowed, a as RIGHTS, b as quoteUsage, g as isRole, h as isPlan, l as checkPushToken, m as invitesAllowed, n as DEMO_STRIPE_SECRET, p as getSql, t as DEMO_SKYDO_SECRET, v as periodLabel } from "./owner-access-gxEwVfLU.mjs";
+import { _ as seedSubscribers, d as isLayout, f as isQualification, g as seedCampaigns, h as reviewCampaign, i as TAGS, l as isAudience, m as readProcess, n as FREE_REACH, s as authMiddleware, t as BASE_REACH, u as isChannel } from "./middleware-fDVXmQad.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/account-fns-Dbs8XevU.js
 var createServerRpc = (serverFnMeta, splitImportFn) => {
 	const url = "/_serverFn/" + serverFnMeta.id;
 	return Object.assign(splitImportFn, {
@@ -71,6 +71,41 @@ function cleanVideo(value) {
 	if (url.protocol !== "https:") throw new Error("Video links must use https.");
 	if (url.toString().length > 500) throw new Error("That video link is too long.");
 	return url.toString();
+}
+function cleanDraft(input) {
+	if (!input || !isChannel(input.channel) || !isQualification(input.qualification) || !isLayout(input.layout)) throw new Error("Choose a push or an in-app campaign.");
+	if (!isAudience(input.audience)) throw new Error("Choose an audience.");
+	if (input.delivery !== "now" && input.delivery !== "later") throw new Error("Choose when to send.");
+	const ttlHours = Math.round(Number(input.ttlHours));
+	const delaySeconds = Math.round(Number(input.delaySeconds));
+	if (!Number.isFinite(ttlHours) || !Number.isFinite(delaySeconds)) throw new Error("Check the delivery window.");
+	return {
+		channel: input.channel,
+		qualification: input.qualification,
+		layout: input.channel === "push" ? "lock" : input.layout,
+		audience: input.audience,
+		title: (input.title ?? "").trim(),
+		body: (input.body ?? "").trim(),
+		link: cleanLink(input.link ?? ""),
+		image: cleanImage(input.image ?? ""),
+		video: cleanVideo(input.video ?? ""),
+		button: (input.button ?? "").trim().slice(0, 24),
+		delivery: input.delivery,
+		ttlHours,
+		delaySeconds,
+		quietHours: Boolean(input.quietHours),
+		goal: (input.goal ?? "").trim().slice(0, 80)
+	};
+}
+function campaignProcess(raw) {
+	const parsed = readProcess(raw);
+	if (!parsed) return {};
+	return {
+		channel: parsed.channel,
+		layout: parsed.layout,
+		deliveryState: parsed.state,
+		button: parsed.button
+	};
 }
 async function userRow(sql, userId) {
 	const row = (await sql`
@@ -180,7 +215,7 @@ async function slice(sql, businessId) {
     order by last_seen desc
   `;
 	const campaignRows = await sql`
-    select id, title, body, link, image_url, video_url, audience, targeted, delivered, failed, clicked, seed, is_test, test_label, created_at
+    select id, title, body, link, image_url, video_url, audience, targeted, delivered, failed, clicked, seed, is_test, test_label, process, created_at
     from campaigns where business_id = ${businessId}
     order by created_at desc
   `;
@@ -216,7 +251,8 @@ async function slice(sql, businessId) {
 			clicked: row.clicked,
 			seed: row.seed,
 			isTest: Boolean(row.is_test),
-			testLabel: row.test_label
+			testLabel: row.test_label,
+			...campaignProcess(row.process)
 		};
 	});
 	const connections = (await sql`
@@ -467,24 +503,22 @@ var sendPush_createServerFn_handler = createServerRpc({
 	name: "sendPush",
 	filename: "src/lib/account-fns.ts"
 }, (opts) => sendPush.__executeServer(opts));
-var sendPush = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => {
-	const title = (input?.title ?? "").trim();
-	const body = (input?.body ?? "").trim();
-	if (!title || title.length > 65) throw new Error("Title is required, up to 65 characters.");
-	if (!body || body.length > 180) throw new Error("Message is required, up to 180 characters.");
-	if (!isAudience(input?.audience)) throw new Error("Choose an audience.");
-	return {
-		title,
-		body,
-		link: cleanLink(input.link ?? ""),
-		image: cleanImage(input.image ?? ""),
-		video: cleanVideo(input.video ?? ""),
-		audience: input.audience
-	};
-}).handler(sendPush_createServerFn_handler, async ({ context, data }) => {
+var sendPush = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => cleanDraft(input)).handler(sendPush_createServerFn_handler, async ({ context, data }) => {
 	const sql = await getSql();
 	const current = await slice(sql, (await requireRight(sql, context.userId, "send")).businessId);
 	if (!current) throw new Error("Workspace missing.");
+	const reviewed = reviewCampaign({
+		draft: data,
+		reach: current.reach,
+		devices: current.subscribers.map((device) => ({
+			platform: device.platform,
+			tag: device.tag,
+			status: device.status,
+			pushToken: device.pushToken
+		})),
+		plan: current.plan
+	});
+	if (reviewed.error) throw new Error(reviewed.error);
 	const blocked = sendsAllowed({
 		plan: current.plan,
 		mau: current.mau,
@@ -495,16 +529,27 @@ var sendPush = createServerFn({ method: "POST" }).middleware([authMiddleware]).v
 		billingState: current.billingState
 	});
 	if (blocked) throw new Error(blocked);
-	const targeted = audienceSize(current.reach, data.audience);
-	if (targeted <= 0) throw new Error("No reachable devices in that audience.");
-	const stats = projectDelivery(targeted, saltFrom(data.title));
+	const id = crypto.randomUUID();
+	const process = JSON.stringify({
+		channel: data.channel,
+		qualification: data.qualification,
+		layout: data.layout,
+		delivery: data.delivery,
+		ttlHours: data.ttlHours,
+		delaySeconds: data.delaySeconds,
+		quietHours: data.quietHours,
+		button: data.button,
+		goal: data.goal,
+		state: reviewed.state
+	});
 	await sql`
       insert into campaigns (
         id, business_id, title, body, link, image_url, video_url, audience,
-        targeted, delivered, failed, clicked, seed
+        targeted, delivered, failed, clicked, seed, process
       ) values (
-        ${crypto.randomUUID()}, ${current.id}, ${data.title}, ${data.body}, ${data.link}, ${data.image}, ${data.video},
-        ${JSON.stringify(data.audience)}, ${stats.targeted}, ${stats.delivered}, ${stats.failed}, ${stats.clicked}, false
+        ${id}, ${current.id}, ${data.title}, ${data.body}, ${data.link}, ${data.image}, ${data.video},
+        ${JSON.stringify(data.audience)}, ${reviewed.stats.targeted}, ${reviewed.stats.delivered},
+        ${reviewed.stats.failed}, ${reviewed.stats.clicked}, false, ${process}
       )
     `;
 	return accountFor(sql, context.userId);

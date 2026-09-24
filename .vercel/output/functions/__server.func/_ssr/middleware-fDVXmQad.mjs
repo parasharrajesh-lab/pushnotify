@@ -1,39 +1,5 @@
 import { n as createMiddleware } from "./ssr.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/push-RHVUTltL.js
-/**
-* Auth middleware for server functions — the standard way to get the caller's
-* verified user id. When deployed the session cookie is same-origin and rides
-* along automatically. In the live preview the client also forwards the bearer
-* token (partitioned cookies) via the `.client` hook below — call sites do not
-* thread it themselves.
-*
-*   import { createServerFn } from "@tanstack/react-start";
-*   import { getSql } from "@/lib/db";
-*   import { authMiddleware } from "@/lib/auth/middleware";
-*
-*   export const listTodos = createServerFn({ method: "GET" })
-*     .middleware([authMiddleware])
-*     .handler(async ({ context }) => {
-*       const sql = await getSql();
-*       return sql`select * from todos where user_id = ${context.userId}`;
-*     });
-*
-* Signed out with auth on (live preview included) -> throws `UnauthorizedError`
-* (see `verify.server.ts`). With auth disabled (`VITE_AUTH_ENABLED=false`, the
-* shipped default) it resolves the shared dev user — but throws instead when a
-* `DATABASE_URL` is also set, so an app without sign-in must not use this at
-* all. On the auth-on path, use it on every server function that touches
-* per-user data and scope every query by `context.userId`.
-*/
-var authMiddleware = createMiddleware({ type: "function" }).client(async ({ next }) => {
-	const { getBearerToken } = await import("./client-CVqXY6bk.mjs").then((n) => n.n).then((n) => n.n);
-	return next({ sendContext: { bearerToken: getBearerToken() ?? void 0 } });
-}).server(async ({ next, context }) => {
-	const { assertSameSiteRequest } = await import("./isolation.server-CGNg1r0B.mjs");
-	const { requireUserId } = await import("./verify.server-CMSLKtPT.mjs");
-	assertSameSiteRequest();
-	return next({ context: { userId: await requireUserId(context.bearerToken) } });
-});
+//#region node_modules/.nitro/vite/services/ssr/assets/middleware-fDVXmQad.js
 var MAU_CAP = 1e4;
 var TAGS = [
 	"orders",
@@ -360,5 +326,144 @@ function isAudience(value) {
 	if (v.kind === "tag") return TAGS.includes(v.tag);
 	return false;
 }
+var STEPS = [
+	"Start",
+	"Who",
+	"What",
+	"When",
+	"Publish"
+];
+function isChannel(value) {
+	return value === "push" || value === "inapp";
+}
+function isQualification(value) {
+	return value === "past" || value === "live" || value === "external";
+}
+function isLayout(value) {
+	return value === "lock" || value === "banner" || value === "modal" || value === "primer";
+}
+function inQuietHours(date) {
+	const hour = date.getHours();
+	return hour >= 21 || hour < 9;
+}
+function matches(device, audience) {
+	if (audience.kind === "platform" && device.platform !== audience.platform) return false;
+	if (audience.kind === "tag" && device.tag !== audience.tag) return false;
+	return true;
+}
+function tokenCounts(devices, audience) {
+	const matched = devices.filter((device) => matches(device, audience));
+	const withToken = (platform) => matched.filter((device) => device.platform === platform && device.status === "active" && Boolean(device.pushToken?.trim())).length;
+	return {
+		android: withToken("android"),
+		ios: withToken("ios"),
+		waiting: matched.filter((device) => device.status === "unregistered").length
+	};
+}
+function reviewCampaign(input) {
+	const draft = input.draft;
+	const now = input.now ?? /* @__PURE__ */ new Date();
+	const tokens = tokenCounts(input.devices, draft.audience);
+	const pushReach = audienceSize(input.reach, draft.audience);
+	const targeted = draft.channel === "inapp" && draft.layout === "primer" ? tokens.waiting : pushReach;
+	const error = campaignError(draft, input.plan, targeted);
+	const quiet = draft.quietHours && inQuietHours(now);
+	let state = "sent";
+	if (!error) {
+		if (draft.qualification !== "past") state = "armed";
+		else if (draft.delivery === "later") state = "scheduled";
+		else if (draft.channel === "push" && quiet) state = "queued";
+	}
+	const stats = state === "sent" && !error ? projectDelivery(targeted, saltFrom(draft.title)) : {
+		targeted,
+		delivered: 0,
+		failed: 0,
+		clicked: 0
+	};
+	return {
+		error,
+		targeted,
+		tokens,
+		state,
+		stats,
+		quiet
+	};
+}
+function campaignError(draft, plan, targeted) {
+	if (!draft.title.trim() || draft.title.trim().length > 65) return "Title is required, up to 65 characters.";
+	if (!draft.body.trim() || draft.body.trim().length > 180) return "Message is required, up to 180 characters.";
+	if (draft.video.trim() && plan !== "advance") return "Video is included on Advance.";
+	if (draft.channel === "push" && draft.layout !== "lock") return "Push uses the lock screen.";
+	if (draft.channel === "inapp" && draft.layout === "lock") return "Choose a banner, a modal, or a permission primer.";
+	if (draft.layout === "primer" && draft.video.trim()) return "A permission primer is text and a button.";
+	if (draft.layout === "primer" && !draft.button.trim()) return "The primer needs a button, such as Allow.";
+	if (draft.qualification !== "past" && draft.delivery === "later") return "A live or external trigger sends when the action happens, not on a clock.";
+	if (draft.channel === "inapp" && (draft.delaySeconds < 0 || draft.delaySeconds > 1200)) return "In-app delay is 0 to 1,200 seconds.";
+	if (draft.channel === "push" && (draft.ttlHours < 1 || draft.ttlHours > 72)) return "Push stays available for 1 to 72 hours.";
+	if (targeted <= 0 && draft.layout === "primer") return "No device is waiting for notification permission.";
+	if (targeted <= 0) return "No reachable devices in that audience.";
+	return null;
+}
+function readProcess(raw) {
+	if (!raw) return null;
+	try {
+		const parsed = JSON.parse(raw);
+		if (!isChannel(parsed.channel) || !isLayout(parsed.layout) || !parsed.state) return null;
+		return {
+			channel: parsed.channel,
+			qualification: isQualification(parsed.qualification) ? parsed.qualification : "past",
+			layout: parsed.layout,
+			delivery: parsed.delivery === "later" ? "later" : "now",
+			ttlHours: Number(parsed.ttlHours) || 24,
+			delaySeconds: Number(parsed.delaySeconds) || 0,
+			quietHours: Boolean(parsed.quietHours),
+			button: typeof parsed.button === "string" ? parsed.button : "",
+			goal: typeof parsed.goal === "string" ? parsed.goal : "",
+			state: parsed.state
+		};
+	} catch {
+		return null;
+	}
+}
+function stateLabel(state) {
+	if (state === "queued") return "Queued until quiet hours end";
+	if (state === "scheduled") return "Scheduled";
+	if (state === "armed") return "Waiting for the trigger";
+	return "Sent";
+}
+/**
+* Auth middleware for server functions — the standard way to get the caller's
+* verified user id. When deployed the session cookie is same-origin and rides
+* along automatically. In the live preview the client also forwards the bearer
+* token (partitioned cookies) via the `.client` hook below — call sites do not
+* thread it themselves.
+*
+*   import { createServerFn } from "@tanstack/react-start";
+*   import { getSql } from "@/lib/db";
+*   import { authMiddleware } from "@/lib/auth/middleware";
+*
+*   export const listTodos = createServerFn({ method: "GET" })
+*     .middleware([authMiddleware])
+*     .handler(async ({ context }) => {
+*       const sql = await getSql();
+*       return sql`select * from todos where user_id = ${context.userId}`;
+*     });
+*
+* Signed out with auth on (live preview included) -> throws `UnauthorizedError`
+* (see `verify.server.ts`). With auth disabled (`VITE_AUTH_ENABLED=false`, the
+* shipped default) it resolves the shared dev user — but throws instead when a
+* `DATABASE_URL` is also set, so an app without sign-in must not use this at
+* all. On the auth-on path, use it on every server function that touches
+* per-user data and scope every query by `context.userId`.
+*/
+var authMiddleware = createMiddleware({ type: "function" }).client(async ({ next }) => {
+	const { getBearerToken } = await import("./client-CVqXY6bk.mjs").then((n) => n.n).then((n) => n.n);
+	return next({ sendContext: { bearerToken: getBearerToken() ?? void 0 } });
+}).server(async ({ next, context }) => {
+	const { assertSameSiteRequest } = await import("./isolation.server-CGNg1r0B.mjs");
+	const { requireUserId } = await import("./verify.server-DuXOWRqF.mjs");
+	assertSameSiteRequest();
+	return next({ context: { userId: await requireUserId(context.bearerToken) } });
+});
 //#endregion
-export { audienceSize as a, isAudience as c, saltFrom as d, seedCampaigns as f, audienceLabel as i, mauCap as l, tagLabel as m, FREE_REACH as n, authMiddleware as o, seedSubscribers as p, TAGS as r, chartSeries as s, BASE_REACH as t, projectDelivery as u };
+export { seedSubscribers as _, audienceLabel as a, tokenCounts as b, chartSeries as c, isLayout as d, isQualification as f, seedCampaigns as g, reviewCampaign as h, TAGS as i, isAudience as l, readProcess as m, FREE_REACH as n, audienceSize as o, mauCap as p, STEPS as r, authMiddleware as s, BASE_REACH as t, isChannel as u, stateLabel as v, tagLabel as y };

@@ -1,15 +1,15 @@
 import { o as __toESM } from "../_runtime.mjs";
 import { B as require_react, b as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
-import { _ as nextPlan, a as RIGHTS, b as quoteUsage, c as ROLE_LABEL, d as formatInr, i as PLAN_RATES, o as RIGHT_ROWS, s as ROLES, y as planLabel } from "./owner-access-DOLxBY6A.mjs";
-import { a as audienceSize, i as audienceLabel, m as tagLabel, r as TAGS, s as chartSeries } from "./push-RHVUTltL.mjs";
-import { c as completeRegistration, d as formatCount, f as formatWhen, n as Input, s as cn, t as Button } from "./account-fns-l6XAJPsf.mjs";
-import { i as usePush, n as UserButton, r as useCurrentUserState, t as RedirectToSignIn } from "./gates-BX8gSWXJ.mjs";
+import { _ as nextPlan, a as RIGHTS, b as quoteUsage, c as ROLE_LABEL, d as formatInr, i as PLAN_RATES, o as RIGHT_ROWS, s as ROLES, y as planLabel } from "./owner-access-gxEwVfLU.mjs";
+import { a as audienceLabel, b as tokenCounts, c as chartSeries, h as reviewCampaign, i as TAGS, o as audienceSize, r as STEPS, v as stateLabel, y as tagLabel } from "./middleware-fDVXmQad.mjs";
+import { c as completeRegistration, d as formatCount, f as formatWhen, n as Input, s as cn, t as Button } from "./account-fns-7GP3bSk7.mjs";
+import { i as usePush, n as UserButton, r as useCurrentUserState, t as RedirectToSignIn } from "./gates-CN0gzG2z.mjs";
 import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
 import { a as ResponsiveContainer, i as Bar, n as YAxis, o as Tooltip, r as XAxis, t as BarChart } from "../_libs/recharts+[...].mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-DqNsVXXJ.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-C_ERKh0G.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-function Phone({ platform, title, body, link, image, video, appName, logo, pulse, onPlatform }) {
+function Phone({ platform, title, body, link, image, video, appName, logo, pulse, surface = "lock", button = "", onPlatform }) {
 	const now = /* @__PURE__ */ new Date();
 	const time = now.toLocaleTimeString("en-IN", {
 		hour: "numeric",
@@ -57,7 +57,7 @@ function Phone({ platform, title, body, link, image, video, appName, logo, pulse
 								month: "long"
 							})
 						}),
-						show ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+						surface === "lock" ? show ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
 							className: "banner-in mx-3 max-h-64 overflow-hidden rounded-sm bg-notif p-3 text-foreground",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -109,13 +109,48 @@ function Phone({ platform, title, body, link, image, video, appName, logo, pulse
 						}, pulse) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							className: "px-6 pt-8 text-center text-sm text-screen-muted",
 							children: "Write a message to preview it on the lock screen."
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "px-3 pt-4",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-sm font-medium",
+									children: appName || "App"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-3 h-2 w-24 rounded-sm bg-screen-muted/40" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mt-2 h-2 w-16 rounded-sm bg-screen-muted/30" }),
+								show ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+									className: cn("banner-in overflow-hidden bg-notif p-3 text-foreground", surface === "modal" ? "mt-10 rounded-lg" : "mt-4 rounded-sm"),
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+											className: "text-sm font-semibold leading-snug",
+											children: title.trim() || "Untitled"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "pt-1 text-sm leading-snug text-muted-foreground",
+											children: body.trim() || "Message body"
+										}),
+										image ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+											src: image,
+											alt: "",
+											className: "mt-2 h-14 w-full rounded-sm object-cover"
+										}) : null,
+										surface === "primer" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "mt-3 h-9 rounded-sm bg-primary text-center text-sm font-medium leading-9 text-primary-foreground",
+											children: button.trim() || "Allow"
+										}) : null
+									]
+								}, pulse) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "pt-6 text-center text-sm text-screen-muted",
+									children: "Write the in-app message."
+								})
+							]
 						})
 					]
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "pt-3 text-center text-xs text-muted-foreground",
-				children: "Lock screen preview"
+				children: surface === "lock" ? "Lock screen" : surface === "primer" ? "Permission primer" : "In-app message"
 			})
 		]
 	});
@@ -157,6 +192,8 @@ function ActivityView() {
 				appName,
 				logo,
 				pulse: 0,
+				surface: current.channel === "inapp" ? current.layout ?? "banner" : "lock",
+				button: current.button,
 				onPlatform: setPreview
 			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "text-sm text-muted-foreground",
@@ -183,9 +220,14 @@ function CampaignRow({ campaign, on, onSelect }) {
 					children: formatWhen(campaign.createdAt)
 				})]
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
 				className: "pt-1 text-sm text-muted-foreground",
-				children: campaign.isTest ? `Test run · ${campaign.testLabel || "Connection"}` : audienceLabel(campaign.audience)
+				children: [
+					campaign.channel === "inapp" ? "In-app" : "Push",
+					" · ",
+					campaign.isTest ? `Test run · ${campaign.testLabel || "Connection"}` : audienceLabel(campaign.audience),
+					campaign.deliveryState && campaign.deliveryState !== "sent" ? ` · ${stateLabel(campaign.deliveryState)}` : ""
+				]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
 				className: "pt-2 text-xs tabular-nums text-muted-foreground",
@@ -1146,17 +1188,11 @@ function PlanView() {
 		]
 	});
 }
-function Badge({ className, ...props }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-		className: cn("inline-flex items-center rounded-sm bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground", className),
-		...props
-	});
-}
 var CHOICES = [
 	{
 		id: "all",
 		audience: { kind: "all" },
-		label: "All devices"
+		label: "All users"
 	},
 	{
 		id: "android",
@@ -1183,60 +1219,94 @@ var CHOICES = [
 		label: tagLabel(tag)
 	}))
 ];
+var EMPTY = {
+	channel: "push",
+	qualification: "past",
+	layout: "lock",
+	audience: {
+		kind: "tag",
+		tag: "orders"
+	},
+	title: "Rider is nearby",
+	body: "Ananya is 4 minutes away with your order.",
+	link: "metrobites://order/4821",
+	image: "",
+	video: "",
+	button: "Allow",
+	delivery: "now",
+	ttlHours: 24,
+	delaySeconds: 0,
+	quietHours: true,
+	goal: "Order opened"
+};
 function SendView() {
 	const reach = usePush((s) => s.reach);
-	const mau = usePush((s) => s.mau);
-	const cap = usePush((s) => s.mauCap);
+	const subscribers = usePush((s) => s.subscribers);
 	const plan = usePush((s) => s.plan);
 	const logo = usePush((s) => s.logo);
 	const appName = usePush((s) => s.businessName);
-	const overCap = usePush((s) => s.overCap);
 	const send = usePush((s) => s.send);
-	const [title, setTitle] = (0, import_react.useState)("Rider is nearby");
-	const [body, setBody] = (0, import_react.useState)("Ananya is 4 minutes away with your Metro Bites order.");
-	const [link, setLink] = (0, import_react.useState)("metrobites://order/4821");
-	const [image, setImage] = (0, import_react.useState)("");
-	const [video, setVideo] = (0, import_react.useState)("");
-	const [choice, setChoice] = (0, import_react.useState)(CHOICES[3].id);
+	const [draft, setDraft] = (0, import_react.useState)(EMPTY);
+	const [step, setStep] = (0, import_react.useState)("Start");
+	const [choice, setChoice] = (0, import_react.useState)("orders");
 	const [preview, setPreview] = (0, import_react.useState)("ios");
 	const [pulse, setPulse] = (0, import_react.useState)(0);
 	const [sending, setSending] = (0, import_react.useState)(false);
-	const audience = CHOICES.find((item) => item.id === choice)?.audience ?? CHOICES[0].audience;
-	const targeted = audienceSize(reach, audience);
-	const blocked = overCap || mau >= cap;
-	const snippet = `{
-  "audience": ${JSON.stringify(audience)},
-  "notification": {
-    "title": ${JSON.stringify(title)},
-    "body": ${JSON.stringify(body)},
-    "link": ${JSON.stringify(link)},
-    "image": ${JSON.stringify(image)},
-    "video": ${JSON.stringify(video)}
-  }
-}`;
+	const devices = subscribers.map((device) => ({
+		platform: device.platform,
+		tag: device.tag,
+		status: device.status,
+		pushToken: device.pushToken
+	}));
+	const reviewed = reviewCampaign({
+		draft,
+		reach,
+		devices,
+		plan
+	});
+	const tokens = tokenCounts(devices, draft.audience);
+	const index = STEPS.indexOf(step);
+	function patch(next) {
+		setDraft((current) => ({
+			...current,
+			...next
+		}));
+	}
+	function go(next) {
+		const problem = reviewCampaign({
+			draft,
+			reach,
+			devices,
+			plan
+		}).error;
+		if ((step === "What" || step === "When" || next === "Publish" || next === "When") && problem && STEPS.indexOf(next) > index) {
+			toast.error(problem);
+			return;
+		}
+		setStep(next);
+	}
 	async function onSubmit(event) {
 		event.preventDefault();
-		if (blocked || sending) return;
+		if (step !== "Publish") {
+			const next = STEPS[index + 1];
+			if (next) go(next);
+			return;
+		}
+		if (reviewed.error || sending) {
+			if (reviewed.error) toast.error(reviewed.error);
+			return;
+		}
 		setSending(true);
-		await new Promise((resolve) => setTimeout(resolve, 700));
-		const error = await send({
-			title,
-			body,
-			link,
-			image,
-			video: plan === "advance" ? video : "",
-			audience
-		});
+		const error = await send(draft);
 		setSending(false);
 		if (error) {
 			toast.error(error);
 			return;
 		}
-		const latest = usePush.getState().campaigns[0];
 		setPulse((n) => n + 1);
-		if (audience.kind === "platform") setPreview(audience.platform);
-		toast.success(latest ? `Delivered to ${formatCount(latest.delivered)} devices` : "Sent");
+		toast.success(stateLabel(reviewed.state));
 	}
+	const surface = draft.channel === "push" ? "lock" : draft.layout;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-col gap-8 lg:flex-row lg:items-start",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
@@ -1245,176 +1315,423 @@ function SendView() {
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 					className: "font-display text-3xl font-medium tracking-tight",
-					children: "Send a push"
+					children: "Campaign"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 					className: "pt-1 text-sm text-pretty text-muted-foreground",
-					children: "Basic sends to Android and iOS. Pick a platform or a tag, then watch the lock screen."
+					children: "Push reaches the lock screen through FCM and APNs. In-app shows inside the open app, including the permission primer."
 				})] }),
-				blocked ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-					className: "rounded-lg border border-border bg-danger-bg px-4 py-3 text-sm text-danger",
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex gap-2 overflow-x-auto",
+					role: "tablist",
+					"aria-label": "Campaign steps",
+					children: STEPS.map((name, item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "button",
+						role: "tab",
+						"aria-selected": step === name,
+						onClick: () => go(name),
+						className: cn("h-11 shrink-0 rounded-sm px-3 text-sm font-medium", step === name ? "bg-primary text-primary-foreground" : "bg-muted"),
+						children: [
+							item + 1,
+							". ",
+							name
+						]
+					}, name))
+				}),
+				step === "Start" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "flex flex-col gap-4",
 					children: [
-						"Basic includes ",
-						formatCount(cap),
-						" MAU. Sends are paused until the cap clears."
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+							className: "pb-2 text-sm font-medium",
+							children: "Channel"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "grid gap-2 sm:grid-cols-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+								on: draft.channel === "push",
+								label: "Push",
+								detail: "Lock screen · FCM and APNs",
+								onClick: () => patch({
+									channel: "push",
+									layout: "lock"
+								})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+								on: draft.channel === "inapp",
+								label: "In-app",
+								detail: "Shown while the app is open",
+								onClick: () => patch({
+									channel: "inapp",
+									layout: draft.layout === "lock" ? "banner" : draft.layout
+								})
+							})]
+						})] }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+							className: "pb-2 text-sm font-medium",
+							children: "Who qualifies"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-wrap gap-2",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.qualification === "past",
+									label: "Past behavior",
+									detail: "",
+									onClick: () => patch({ qualification: "past" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.qualification === "live",
+									label: "Live behavior",
+									detail: "",
+									onClick: () => patch({
+										qualification: "live",
+										delivery: "now"
+									})
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.qualification === "external",
+									label: "External trigger",
+									detail: "",
+									onClick: () => patch({
+										qualification: "external",
+										delivery: "now"
+									})
+								})
+							]
+						})] }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "rounded-xl border border-border bg-card p-4 text-sm",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "font-medium",
+									children: "iOS and Android setup"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("ol", {
+									className: "list-decimal space-y-1 pt-2 pl-4 text-muted-foreground",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: "Ask with an in-app primer before the system permission." }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: "Save the APNs or FCM token on the device." }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: "Address the campaign to those tokens, with a deep link and rich media." })
+									]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "pt-3 tabular-nums text-muted-foreground",
+									children: [
+										"APNs tokens ",
+										formatCount(tokens.ios),
+										" · FCM tokens ",
+										formatCount(tokens.android),
+										" · Waiting on permission ",
+										formatCount(tokens.waiting)
+									]
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Goal", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								value: draft.goal,
+								maxLength: 80,
+								onChange: (e) => patch({ goal: e.target.value }),
+								placeholder: "Optional conversion, such as Order opened"
+							})]
+						})
 					]
 				}) : null,
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-					className: "flex flex-col gap-2 text-sm font-medium",
-					children: [
-						"Title",
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-							value: title,
-							maxLength: 65,
-							onChange: (e) => setTitle(e.target.value),
-							placeholder: "Short title"
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "text-xs font-normal tabular-nums text-muted-foreground",
-							children: [title.length, "/65"]
-						})
-					]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-					className: "flex flex-col gap-2 text-sm font-medium",
-					children: [
-						"Message",
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Textarea, {
-							value: body,
-							maxLength: 180,
-							onChange: (e) => setBody(e.target.value),
-							placeholder: "What should the lock screen say?"
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "text-xs font-normal tabular-nums text-muted-foreground",
-							children: [body.length, "/180"]
-						})
-					]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-					className: "flex flex-col gap-2 text-sm font-medium",
-					children: ["Deep link", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-						value: link,
-						onChange: (e) => setLink(e.target.value),
-						placeholder: "metrobites://order/4821"
-					})]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-					className: "flex flex-col gap-2 text-sm font-medium",
-					children: [
-						"Image",
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-							value: image.startsWith("data:") ? "" : image,
-							onChange: (e) => setImage(e.target.value),
-							placeholder: "https:// image link"
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-							type: "file",
-							accept: "image/png,image/jpeg,image/webp,image/gif",
-							className: "text-sm text-muted-foreground",
-							onChange: (event) => {
-								const file = event.target.files?.[0];
-								if (!file) return;
-								if (file.size > 12e4) {
-									toast.error("Image must be under 120 KB.");
-									return;
-								}
-								const reader = new FileReader();
-								reader.onload = () => setImage(typeof reader.result === "string" ? reader.result : "");
-								reader.readAsDataURL(file);
-							}
-						}),
-						image ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							className: "text-xs font-normal text-muted-foreground",
-							children: "Image attached"
-						}) : null
-					]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-					className: "flex flex-col gap-2 text-sm font-medium",
-					children: ["Video", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-						value: video,
-						disabled: plan !== "advance",
-						onChange: (e) => setVideo(e.target.value),
-						placeholder: plan === "advance" ? "https:// video link" : "Video is on Advance"
-					})]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+				step === "Who" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
 						className: "pb-2 text-sm font-medium",
 						children: "Audience"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						className: "flex flex-wrap gap-2",
-						children: CHOICES.map((item) => {
-							const on = item.id === choice;
-							return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-pressed": on,
-								onClick: () => {
-									setChoice(item.id);
-									if (item.audience.kind === "platform") setPreview(item.audience.platform);
-								},
-								className: cn("h-10 rounded-sm px-3 text-sm font-medium", on ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"),
-								children: item.label
-							}, item.id);
-						})
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						className: "pt-2 text-sm tabular-nums text-muted-foreground",
-						children: [
-							formatCount(targeted),
-							" reachable devices · ",
-							audienceLabel(audience)
-						]
-					})
-				] }),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-					type: "submit",
-					disabled: blocked || sending || !title.trim() || !body.trim() || targeted === 0,
-					children: sending ? "Sending…" : "Send push"
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("details", {
-					className: "rounded-xl border border-border bg-card p-4",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("summary", {
-							className: "text-sm font-medium",
-							children: "Same call over the API"
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("pre", {
-							className: "mt-3 overflow-x-auto font-mono text-xs leading-relaxed text-muted-foreground",
-							children: snippet
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-							variant: "outline",
-							size: "sm",
-							className: "mt-3",
+						children: CHOICES.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							"aria-pressed": choice === item.id,
 							onClick: () => {
-								navigator.clipboard.writeText(snippet);
-								toast.success("API body copied");
+								setChoice(item.id);
+								patch({ audience: item.audience });
+								if (item.audience.kind === "platform") setPreview(item.audience.platform);
 							},
-							children: "Copy body"
+							className: cn("h-10 rounded-sm px-3 text-sm font-medium", choice === item.id ? "bg-primary text-primary-foreground" : "bg-muted"),
+							children: item.label
+						}, item.id))
+					})] }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+						className: "pt-3 text-sm tabular-nums text-muted-foreground",
+						children: [
+							"Estimated reach ",
+							formatCount(draft.layout === "primer" ? tokens.waiting : audienceSize(reach, draft.audience)),
+							" · ",
+							audienceLabel(draft.audience)
+						]
+					}),
+					reviewed.error && (draft.layout === "primer" || audienceSize(reach, draft.audience) === 0) ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "pt-2 text-sm text-danger",
+						children: reviewed.error
+					}) : null
+				] }) : null,
+				step === "What" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "flex flex-col gap-4",
+					children: [
+						draft.channel === "inapp" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+							className: "pb-2 text-sm font-medium",
+							children: "Layout"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-wrap gap-2",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.layout === "banner",
+									label: "Banner",
+									detail: "",
+									onClick: () => patch({ layout: "banner" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.layout === "modal",
+									label: "Modal",
+									detail: "",
+									onClick: () => patch({ layout: "modal" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+									on: draft.layout === "primer",
+									label: "Push primer",
+									detail: "",
+									onClick: () => patch({ layout: "primer" })
+								})
+							]
+						})] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-sm text-muted-foreground",
+							children: "One message on the lock screen. Title, body, image, and a deep link."
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: [
+								"Title",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+									value: draft.title,
+									maxLength: 65,
+									onChange: (e) => patch({ title: e.target.value })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "text-xs font-normal tabular-nums text-muted-foreground",
+									children: [draft.title.length, "/65"]
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: [
+								"Message",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Textarea, {
+									value: draft.body,
+									maxLength: 180,
+									onChange: (e) => patch({ body: e.target.value })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "text-xs font-normal tabular-nums text-muted-foreground",
+									children: [draft.body.length, "/180"]
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Deep link", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								value: draft.link,
+								onChange: (e) => patch({ link: e.target.value }),
+								placeholder: "app://order/4821"
+							})]
+						}),
+						draft.layout === "primer" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Button", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								value: draft.button,
+								maxLength: 24,
+								onChange: (e) => patch({ button: e.target.value })
+							})]
+						}) : null,
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: [
+								"Image",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+									value: draft.image.startsWith("data:") ? "" : draft.image,
+									onChange: (e) => patch({ image: e.target.value }),
+									placeholder: "https:// image"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "file",
+									accept: "image/png,image/jpeg,image/webp,image/gif",
+									className: "text-sm text-muted-foreground",
+									onChange: (event) => {
+										const file = event.target.files?.[0];
+										if (!file) return;
+										if (file.size > 12e4) {
+											toast.error("Image must be under 120 KB.");
+											return;
+										}
+										const reader = new FileReader();
+										reader.onload = () => patch({ image: typeof reader.result === "string" ? reader.result : "" });
+										reader.readAsDataURL(file);
+									}
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Video", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								value: draft.video,
+								disabled: plan !== "advance" || draft.layout === "primer",
+								onChange: (e) => patch({ video: e.target.value }),
+								placeholder: plan === "advance" ? "https:// video" : "Video is on Advance"
+							})]
 						})
 					]
+				}) : null,
+				step === "When" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "flex flex-col gap-4",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+							className: "pb-2 text-sm font-medium",
+							children: "Delivery"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-wrap gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+								on: draft.delivery === "now",
+								label: "Now",
+								detail: "",
+								onClick: () => patch({ delivery: "now" })
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Choice, {
+								on: draft.delivery === "later",
+								label: "Later",
+								detail: "",
+								onClick: () => patch({
+									delivery: "later",
+									qualification: draft.qualification === "past" ? "past" : "past"
+								})
+							})]
+						})] }),
+						draft.channel === "push" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Time to live, hours", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								type: "number",
+								min: 1,
+								max: 72,
+								value: draft.ttlHours,
+								onChange: (e) => patch({ ttlHours: Number(e.target.value) })
+							})]
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-sm font-medium",
+							children: ["Delay after the trigger, seconds", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								type: "number",
+								min: 0,
+								max: 1200,
+								value: draft.delaySeconds,
+								onChange: (e) => patch({ delaySeconds: Number(e.target.value) })
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex items-center gap-2 text-sm font-medium",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "checkbox",
+								checked: draft.quietHours,
+								onChange: (e) => patch({ quietHours: e.target.checked })
+							}), "Quiet hours, 9pm to 9am"]
+						}),
+						reviewed.error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-sm text-danger",
+							children: reviewed.error
+						}) : null
+					]
+				}) : null,
+				step === "Publish" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "rounded-xl border border-border bg-card p-4 text-sm",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "font-medium",
+							children: "Summary"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("ul", {
+							className: "pt-2 text-muted-foreground",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
+									draft.channel === "push" ? "Push" : "In-app",
+									" · ",
+									draft.qualification === "past" ? "Past behavior" : draft.qualification === "live" ? "Live behavior" : "External trigger"
+								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
+									audienceLabel(draft.audience),
+									" · ",
+									formatCount(reviewed.targeted),
+									" reachable"
+								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
+									draft.delivery === "now" ? "Send now" : "Schedule",
+									" · ",
+									stateLabel(reviewed.state)
+								] }),
+								draft.channel === "push" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
+									"TTL ",
+									draft.ttlHours,
+									" hours · APNs ",
+									formatCount(tokens.ios),
+									" · FCM ",
+									formatCount(tokens.android)
+								] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
+									"Delay ",
+									draft.delaySeconds,
+									"s · ",
+									draft.layout
+								] }),
+								draft.goal ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: ["Goal · ", draft.goal] }) : null
+							]
+						}),
+						reviewed.error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "pt-3 text-danger",
+							children: reviewed.error
+						}) : null
+					]
+				}) : null,
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex gap-2",
+					children: [index > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+						type: "button",
+						variant: "outline",
+						onClick: () => setStep(STEPS[index - 1] ?? "Start"),
+						children: "Back"
+					}) : null, /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+						type: "submit",
+						disabled: sending || step === "Publish" && Boolean(reviewed.error),
+						children: sending ? "Publishing…" : step === "Publish" ? "Publish campaign" : "Continue"
+					})]
 				})
 			]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 			className: "order-1 lg:sticky lg:top-24 lg:order-2 lg:w-64 lg:shrink-0",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Phone, {
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Phone, {
 				platform: preview,
-				title,
-				body,
-				link,
-				image,
-				video: plan === "advance" ? video : "",
+				title: draft.title,
+				body: draft.body,
+				link: draft.link,
+				image: draft.image,
+				video: plan === "advance" ? draft.video : "",
 				appName,
 				logo,
 				pulse,
+				surface: surface === "lock" ? "lock" : surface,
+				button: draft.button,
 				onPlatform: setPreview
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "flex justify-center pt-3",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, { children: "Basic · mobile only" })
-			})]
+			})
 		})]
+	});
+}
+function Choice({ on, label, detail, onClick }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+		type: "button",
+		"aria-pressed": on,
+		onClick,
+		className: cn("rounded-xl border px-3 py-3 text-left", on ? "border-primary bg-card" : "border-border bg-card"),
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			className: "text-sm font-medium",
+			children: label
+		}), detail ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			className: "pt-1 text-xs text-muted-foreground",
+			children: detail
+		}) : null]
 	});
 }
 function SystemView() {
@@ -1739,7 +2056,7 @@ function TeamView() {
 var NAV = [
 	{
 		id: "send",
-		label: "Send",
+		label: "Campaigns",
 		right: "send"
 	},
 	{
