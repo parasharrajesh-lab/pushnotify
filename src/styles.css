@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f3f2ee;
+  --color-foreground: #1c1b19;
+  --color-card: #fafaf7;
+  --color-card-foreground: #1c1b19;
+  --color-muted: #eceae4;
+  --color-muted-foreground: #6a675f;
+  --color-subtle: #8a867c;
+  --color-border: #e2dfd6;
+  --color-primary: #1e2a32;
+  --color-primary-foreground: #f6f5f2;
+  --color-ring: #1e2a32;
+  --color-screen: #24221e;
+  --color-screen-fg: #f6f4ef;
+  --color-screen-muted: #b7b2a8;
+  --color-notif: #f7f6f2;
+  --color-ok: #245c40;
+  --color-ok-bg: #e4f0e9;
+  --color-danger: #8d3b32;
+  --color-danger-bg: #f6e8e6;
+  --color-warn: #7a5420;
+  --color-warn-bg: #f6efe3;
+  --font-sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.banner-in {
+  animation: banner-in 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-in {
+    animation: none;
+  }
+}
